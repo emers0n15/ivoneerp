@@ -596,9 +596,12 @@ $cards = [
                                                         <td><span class="<?php echo $fatura['detalhes']['classe']; ?>"><?php echo $fatura['detalhes']['status']; ?></span></td>
                                                         <td class="table-actions">
                                                             <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
-                                                                <i class="fa fa-eye"></i> Detalhes
+                                                                <i class="fa fa-info-circle"></i> Detalhes
                                                             </button>
-                                                            <a href="imprimir_recibo.php?id=<?php echo $fatura['id']; ?>" target="_blank" class="btn btn-sm btn-outline-dark">
+                                                            <a href="documento_detalhe.php?tipo=fa&id=<?php echo $fatura['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i> Visualizar
+                                                            </a>
+                                                            <a href="documento_detalhe.php?tipo=fa&id=<?php echo $fatura['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
                                                             </a>
                                                         </td>
@@ -664,11 +667,14 @@ $cards = [
                                                         <td><?php echo strtoupper($venda['metodo'] ?? '-'); ?></td>
                                                         <td class="table-actions">
                                                             <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
-                                                                <i class="fa fa-eye"></i> Detalhes
+                                                                <i class="fa fa-info-circle"></i> Detalhes
                                                             </button>
-                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                            <a href="documento_detalhe.php?tipo=vds&id=<?php echo $venda['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i> Visualizar
+                                                            </a>
+                                                            <a href="documento_detalhe.php?tipo=vds&id=<?php echo $venda['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
-                                                            </button>
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -732,11 +738,14 @@ $cards = [
                                                         <td><?php echo formatarMoeda($cotacao['valor'] ?? 0); ?></td>
                                                         <td class="table-actions">
                                                             <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
-                                                                <i class="fa fa-eye"></i> Detalhes
+                                                                <i class="fa fa-info-circle"></i> Detalhes
                                                             </button>
-                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                            <a href="documento_detalhe.php?tipo=ct&id=<?php echo $cotacao['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i> Visualizar
+                                                            </a>
+                                                            <a href="documento_detalhe.php?tipo=ct&id=<?php echo $cotacao['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
-                                                            </button>
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -804,11 +813,14 @@ $cards = [
                                                         <td><?php echo $nota['motivo'] ?? '-'; ?></td>
                                                         <td class="table-actions">
                                                             <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
-                                                                <i class="fa fa-eye"></i> Detalhes
+                                                                <i class="fa fa-info-circle"></i> Detalhes
                                                             </button>
-                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                            <a href="documento_detalhe.php?tipo=nc&id=<?php echo $nota['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i> Visualizar
+                                                            </a>
+                                                            <a href="documento_detalhe.php?tipo=nc&id=<?php echo $nota['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
-                                                            </button>
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -873,11 +885,14 @@ $cards = [
                                                         <td><?php echo $nota['motivo'] ?? '-'; ?></td>
                                                         <td class="table-actions">
                                                             <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
-                                                                <i class="fa fa-eye"></i> Detalhes
+                                                                <i class="fa fa-info-circle"></i> Detalhes
                                                             </button>
-                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                            <a href="documento_detalhe.php?tipo=nd&id=<?php echo $nota['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i> Visualizar
+                                                            </a>
+                                                            <a href="documento_detalhe.php?tipo=nd&id=<?php echo $nota['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
-                                                            </button>
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -943,11 +958,14 @@ $cards = [
                                                         <td><?php echo $dv['dataa'] ? date('d/m/Y', strtotime($dv['dataa'])) : '-'; ?></td>
                                                         <td class="table-actions">
                                                             <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
-                                                                <i class="fa fa-eye"></i> Detalhes
+                                                                <i class="fa fa-info-circle"></i> Detalhes
                                                             </button>
-                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                            <a href="documento_detalhe.php?tipo=dv&id=<?php echo $dv['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i> Visualizar
+                                                            </a>
+                                                            <a href="documento_detalhe.php?tipo=dv&id=<?php echo $dv['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
-                                                            </button>
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -1011,11 +1029,14 @@ $cards = [
                                                         <td><?php echo $rc['dataa'] ? date('d/m/Y', strtotime($rc['dataa'])) : '-'; ?></td>
                                                         <td class="table-actions">
                                                             <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
-                                                                <i class="fa fa-eye"></i> Detalhes
+                                                                <i class="fa fa-info-circle"></i> Detalhes
                                                             </button>
-                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                            <a href="documento_detalhe.php?tipo=rc&id=<?php echo $rc['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fa fa-eye"></i> Visualizar
+                                                            </a>
+                                                            <a href="documento_detalhe.php?tipo=rc&id=<?php echo $rc['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
-                                                            </button>
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -1188,55 +1209,6 @@ $cards = [
                 $('#modalDetalhesDocumento').modal('show');
             });
 
-            function openPrintableDocumento(dados) {
-                const printWindow = window.open('', '_blank', 'width=900,height=650');
-                const styles = `
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
-                        h2 { margin-top: 0; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
-                        th { width: 35%; background: #f7f7f7; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; color: #555; }
-                    </style>
-                `;
-
-                let rowsHtml = '';
-                Object.keys(dados).forEach(function(chave) {
-                    const valor = dados[chave] && dados[chave] !== '' ? dados[chave] : '-';
-                    rowsHtml += `<tr><th>${chave}</th><td>${valor}</td></tr>`;
-                });
-
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                        <head>
-                            <title>Documento - ${dados['Documento'] || ''}</title>
-                            ${styles}
-                        </head>
-                        <body>
-                            <h2>${dados['Documento'] || 'Documento'}</h2>
-                            <table>${rowsHtml}</table>
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                printWindow.focus();
-                printWindow.print();
-            }
-
-            $('.btn-print').on('click', function() {
-                const dadosRaw = $(this).attr('data-documento');
-                let dados;
-                try {
-                    dados = JSON.parse(dadosRaw);
-                } catch (error) {
-                    dados = null;
-                }
-
-                if(dados) {
-                    openPrintableDocumento(dados);
-                }
-            });
         });
     </script>
 </body>
