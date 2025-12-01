@@ -312,27 +312,49 @@ $cards = [
     <?php include 'includes/head.php'; ?>
     <link href="../datatables.min.css" rel="stylesheet"/>
     <style>
+        :root {
+            --primary: #3D5DFF;
+            --primary-light: #EEF1FF;
+            --accent: #38D0ED;
+            --card-radius: 16px;
+        }
         .doc-card {
-            border-radius: 12px;
+            border-radius: var(--card-radius);
             color: #fff;
-            padding: 18px;
+            padding: 16px 18px;
             margin-bottom: 20px;
-            min-height: 140px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            min-height: 100px;
+            max-height: 100px;
+            box-shadow: 0 14px 35px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .doc-card::after {
+            content: "";
+            position: absolute;
+            right: -40px;
+            bottom: -40px;
+            width: 140px;
+            height: 140px;
+            background: rgba(255,255,255,0.18);
+            border-radius: 50%;
         }
         .doc-card .card-icon {
-            font-size: 26px;
-            margin-bottom: 8px;
-            opacity: 0.9;
+            font-size: 24px;
+            margin-bottom: 4px;
+            opacity: 0.95;
         }
         .doc-card .card-value {
-            font-size: 32px;
+            font-size: 26px;
             font-weight: bold;
             margin: 0;
             line-height: 1;
         }
         .doc-card .card-label {
-            font-size: 13px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 3px;
@@ -348,13 +370,34 @@ $cards = [
             margin-right: 10px;
             padding: 8px 18px;
             font-weight: 600;
-            color: #3D5DFF;
-            border: 1px solid rgba(61,93,255,0.2);
+            color: #111;
+            border: 1px solid #d6d6d6;
+            transition: all .2s ease;
+            background: #fff;
         }
         .nav-pills.document-tabs .nav-link.active {
-            background: #3D5DFF;
+            background: #000;
             color: #fff;
-            box-shadow: 0 8px 20px rgba(61,93,255,0.25);
+            border-color: #000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        }
+        .document-filters {
+            border-radius: var(--card-radius);
+            border: 1px solid #edf0ff;
+            box-shadow: 0 15px 35px rgba(0, 36, 125, 0.08);
+        }
+        .filter-card .form-control,
+        .filter-card .form-select {
+            border-radius: 12px;
+            border-color: #dfe3ff;
+            box-shadow: none;
+        }
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6d7593;
         }
         .table-documentos {
             width: 100%;
@@ -382,6 +425,29 @@ $cards = [
         }
         .detalhe-linha span {
             color: #7a7a7a;
+        }
+        .status-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .status-chip {
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--primary-light);
+            color: #1a237e;
+        }
+        .status-chip i {
+            margin-right: 6px;
+        }
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -443,6 +509,34 @@ $cards = [
                     </li>
                 </ul>
 
+                <div class="card filter-card document-filters m-b-30">
+                    <div class="card-body">
+                        <div class="row align-items-end">
+                            <div class="col-md-4 col-sm-12 m-b-15">
+                                <label class="filter-label" for="filterSearch">Pesquisa rápida</label>
+                                <input type="text" id="filterSearch" class="form-control" placeholder="Paciente, Nº documento, empresa...">
+                            </div>
+                            <div class="col-md-3 col-sm-6 m-b-15">
+                                <label class="filter-label" for="filterDateFrom">Data inicial</label>
+                                <input type="date" id="filterDateFrom" class="form-control">
+                            </div>
+                            <div class="col-md-3 col-sm-6 m-b-15">
+                                <label class="filter-label" for="filterDateTo">Data final</label>
+                                <input type="date" id="filterDateTo" class="form-control">
+                            </div>
+                            <div class="col-md-2 col-sm-12 m-b-15 filter-actions">
+                                <button class="btn btn-light btn-block" id="filterReset"><i class="fa fa-undo"></i> Limpar</button>
+                            </div>
+                        </div>
+                        <div class="status-legend">
+                            <span class="status-chip"><i class="fa fa-circle text-success"></i> Pagas</span>
+                            <span class="status-chip"><i class="fa fa-circle text-info"></i> Parciais</span>
+                            <span class="status-chip"><i class="fa fa-circle text-warning"></i> Pendentes</span>
+                            <span class="status-chip"><i class="fa fa-circle text-secondary"></i> Devolvidas</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="tab-faturas">
                         <div class="card">
@@ -451,7 +545,7 @@ $cards = [
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-documentos" id="tabela-faturas" data-order-column="3">
+                                    <table class="table table-striped table-bordered table-documentos" id="tabela-faturas" data-order-column="3" data-date-column="3">
                                         <thead>
                                             <tr>
                                                 <th>Nº Fatura</th>
@@ -484,6 +578,10 @@ $cards = [
                                                             'Data' => $fatura['dataa'] ?? '-'
                                                         ];
                                                     ?>
+                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
+                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
+                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
+                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
                                                         <td>
@@ -497,10 +595,10 @@ $cards = [
                                                         <td><?php echo formatarMoeda($fatura['valor'] ?? 0); ?></td>
                                                         <td><span class="<?php echo $fatura['detalhes']['classe']; ?>"><?php echo $fatura['detalhes']['status']; ?></span></td>
                                                         <td class="table-actions">
-                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
                                                                 <i class="fa fa-eye"></i> Detalhes
                                                             </button>
-                                                            <a href="imprimir_recibo.php?id=<?php echo $fatura['id']; ?>" target="_blank" class="btn btn-sm btn-primary">
+                                                            <a href="imprimir_recibo.php?id=<?php echo $fatura['id']; ?>" target="_blank" class="btn btn-sm btn-outline-dark">
                                                                 <i class="fa fa-print"></i> Imprimir
                                                             </a>
                                                         </td>
@@ -521,7 +619,7 @@ $cards = [
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-documentos" id="tabela-vendas" data-order-column="3">
+                                    <table class="table table-striped table-bordered table-documentos" id="tabela-vendas" data-order-column="3" data-date-column="3">
                                         <thead>
                                             <tr>
                                                 <th>Nº Documento</th>
@@ -564,9 +662,12 @@ $cards = [
                                                         <td><?php echo $venda['dataa'] ? date('d/m/Y', strtotime($venda['dataa'])) : '-'; ?></td>
                                                         <td><?php echo formatarMoeda($venda['valor'] ?? 0); ?></td>
                                                         <td><?php echo strtoupper($venda['metodo'] ?? '-'); ?></td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <td class="table-actions">
+                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
                                                                 <i class="fa fa-eye"></i> Detalhes
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                                <i class="fa fa-print"></i> Imprimir
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -586,7 +687,7 @@ $cards = [
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-documentos" id="tabela-cotacoes" data-order-column="3">
+                                    <table class="table table-striped table-bordered table-documentos" id="tabela-cotacoes" data-order-column="3" data-date-column="3">
                                         <thead>
                                             <tr>
                                                 <th>Nº Cotação</th>
@@ -629,9 +730,12 @@ $cards = [
                                                         <td><?php echo $cotacao['dataa'] ? date('d/m/Y', strtotime($cotacao['dataa'])) : '-'; ?></td>
                                                         <td><?php echo $cotacao['prazo'] ? date('d/m/Y', strtotime($cotacao['prazo'])) : '-'; ?></td>
                                                         <td><?php echo formatarMoeda($cotacao['valor'] ?? 0); ?></td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <td class="table-actions">
+                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
                                                                 <i class="fa fa-eye"></i> Detalhes
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                                <i class="fa fa-print"></i> Imprimir
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -651,7 +755,7 @@ $cards = [
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-documentos" id="tabela-nc" data-order-column="4">
+                                    <table class="table table-striped table-bordered table-documentos" id="tabela-nc" data-order-column="4" data-date-column="4">
                                         <thead>
                                             <tr>
                                                 <th>Nº Nota</th>
@@ -683,6 +787,9 @@ $cards = [
                                                             'Data' => $nota['dataa'] ?? '-'
                                                         ];
                                                     ?>
+                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
+                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
+                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
                                                         <td><?php echo $faturaOrigem; ?></td>
@@ -695,9 +802,12 @@ $cards = [
                                                         <td><?php echo formatarMoeda($nota['valor'] ?? 0); ?></td>
                                                         <td><?php echo $nota['dataa'] ? date('d/m/Y', strtotime($nota['dataa'])) : '-'; ?></td>
                                                         <td><?php echo $nota['motivo'] ?? '-'; ?></td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <td class="table-actions">
+                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
                                                                 <i class="fa fa-eye"></i> Detalhes
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                                <i class="fa fa-print"></i> Imprimir
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -717,7 +827,7 @@ $cards = [
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-documentos" id="tabela-nd" data-order-column="4">
+                                    <table class="table table-striped table-bordered table-documentos" id="tabela-nd" data-order-column="4" data-date-column="4">
                                         <thead>
                                             <tr>
                                                 <th>Nº Nota</th>
@@ -761,9 +871,12 @@ $cards = [
                                                         <td><?php echo formatarMoeda($nota['valor'] ?? 0); ?></td>
                                                         <td><?php echo $nota['dataa'] ? date('d/m/Y', strtotime($nota['dataa'])) : '-'; ?></td>
                                                         <td><?php echo $nota['motivo'] ?? '-'; ?></td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <td class="table-actions">
+                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
                                                                 <i class="fa fa-eye"></i> Detalhes
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                                <i class="fa fa-print"></i> Imprimir
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -783,7 +896,7 @@ $cards = [
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-documentos" id="tabela-dv" data-order-column="5">
+                                    <table class="table table-striped table-bordered table-documentos" id="tabela-dv" data-order-column="5" data-date-column="5">
                                         <thead>
                                             <tr>
                                                 <th>Nº Documento</th>
@@ -828,9 +941,12 @@ $cards = [
                                                         <td><?php echo formatarMoeda($dv['valor'] ?? 0); ?></td>
                                                         <td><?php echo strtoupper($dv['metodo'] ?? '-'); ?></td>
                                                         <td><?php echo $dv['dataa'] ? date('d/m/Y', strtotime($dv['dataa'])) : '-'; ?></td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <td class="table-actions">
+                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
                                                                 <i class="fa fa-eye"></i> Detalhes
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                                <i class="fa fa-print"></i> Imprimir
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -850,7 +966,7 @@ $cards = [
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-documentos" id="tabela-rc" data-order-column="5">
+                                    <table class="table table-striped table-bordered table-documentos" id="tabela-rc" data-order-column="5" data-date-column="5">
                                         <thead>
                                             <tr>
                                                 <th>Nº Recibo</th>
@@ -893,9 +1009,12 @@ $cards = [
                                                         <td><?php echo formatarMoeda($rc['valor'] ?? 0); ?></td>
                                                         <td><?php echo strtoupper($rc['metodo'] ?? '-'); ?></td>
                                                         <td><?php echo $rc['dataa'] ? date('d/m/Y', strtotime($rc['dataa'])) : '-'; ?></td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>">
+                                                        <td class="table-actions">
+                                                            <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
                                                                 <i class="fa fa-eye"></i> Detalhes
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-dark btn-print" data-documento="<?php echo $detalhes_json; ?>">
+                                                                <i class="fa fa-print"></i> Imprimir
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -937,11 +1056,60 @@ $cards = [
     <script type="text/javascript" src="../js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('.table-documentos').each(function() {
+            const dataTables = {};
+            const tables = $('.table-documentos');
+            let activeTableId = tables.first().attr('id');
+            const filterState = {
+                text: '',
+                dateFrom: null,
+                dateTo: null
+            };
+
+            function parseDatePtBr(value) {
+                if(!value || value === '-' || value.length < 8) return null;
+                const parts = value.split('/');
+                if(parts.length !== 3) return null;
+                const [day, month, year] = parts;
+                return new Date(`${year}-${month}-${day}`);
+            }
+
+            $.fn.dataTable.ext.search.push(function(settings, data) {
+                if(settings.sTableId !== activeTableId) {
+                    return true;
+                }
+
+                const tableNode = settings.nTable;
+                const dateColumnIndex = parseInt($(tableNode).data('date-column'), 10);
+
+                if(!isNaN(dateColumnIndex)) {
+                    const dateString = (data[dateColumnIndex] || '').trim();
+                    const rowDate = parseDatePtBr(dateString);
+
+                    if(filterState.dateFrom) {
+                        const fromDate = new Date(filterState.dateFrom);
+                        if(!rowDate || rowDate < fromDate) {
+                            return false;
+                        }
+                    }
+
+                    if(filterState.dateTo) {
+                        const toDate = new Date(filterState.dateTo);
+                        toDate.setHours(23, 59, 59, 999);
+                        if(!rowDate || rowDate > toDate) {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            });
+
+            tables.each(function() {
                 const orderColumn = parseInt($(this).data('order-column'), 10);
                 const orderConfig = isNaN(orderColumn) ? [[0, "desc"]] : [[orderColumn, "desc"]];
+                const tableId = $(this).attr('id');
 
-                $(this).DataTable({
+                dataTables[tableId] = $(this).DataTable({
                     language: {
                         url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Portuguese.json",
                         emptyTable: "Nenhum registo encontrado"
@@ -950,6 +1118,50 @@ $cards = [
                     pageLength: 10,
                     responsive: true
                 });
+            });
+
+            function getActiveTable() {
+                return dataTables[activeTableId];
+            }
+
+            function applyFilters() {
+                const table = getActiveTable();
+                if(!table) return;
+
+                table.search(filterState.text).draw();
+            }
+
+            $('#filterSearch').on('input', function() {
+                filterState.text = $(this).val();
+                applyFilters();
+            });
+
+            $('#filterDateFrom').on('change', function() {
+                filterState.dateFrom = $(this).val() || null;
+                applyFilters();
+            });
+
+            $('#filterDateTo').on('change', function() {
+                filterState.dateTo = $(this).val() || null;
+                applyFilters();
+            });
+
+            $('#filterReset').on('click', function() {
+                filterState.text = '';
+                filterState.dateFrom = null;
+                filterState.dateTo = null;
+                $('#filterSearch').val('');
+                $('#filterDateFrom').val('');
+                $('#filterDateTo').val('');
+                applyFilters();
+            });
+
+            $('.document-tabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                const targetTable = $( $(e.target).attr('href') ).find('.table-documentos').attr('id');
+                if(targetTable) {
+                    activeTableId = targetTable;
+                    applyFilters();
+                }
             });
 
             $('.btn-detalhes').on('click', function() {
@@ -974,6 +1186,56 @@ $cards = [
                 }
 
                 $('#modalDetalhesDocumento').modal('show');
+            });
+
+            function openPrintableDocumento(dados) {
+                const printWindow = window.open('', '_blank', 'width=900,height=650');
+                const styles = `
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
+                        h2 { margin-top: 0; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
+                        th { width: 35%; background: #f7f7f7; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; color: #555; }
+                    </style>
+                `;
+
+                let rowsHtml = '';
+                Object.keys(dados).forEach(function(chave) {
+                    const valor = dados[chave] && dados[chave] !== '' ? dados[chave] : '-';
+                    rowsHtml += `<tr><th>${chave}</th><td>${valor}</td></tr>`;
+                });
+
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                        <head>
+                            <title>Documento - ${dados['Documento'] || ''}</title>
+                            ${styles}
+                        </head>
+                        <body>
+                            <h2>${dados['Documento'] || 'Documento'}</h2>
+                            <table>${rowsHtml}</table>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+            }
+
+            $('.btn-print').on('click', function() {
+                const dadosRaw = $(this).attr('data-documento');
+                let dados;
+                try {
+                    dados = JSON.parse(dadosRaw);
+                } catch (error) {
+                    dados = null;
+                }
+
+                if(dados) {
+                    openPrintableDocumento(dados);
+                }
             });
         });
     </script>
