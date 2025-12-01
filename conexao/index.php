@@ -2,7 +2,7 @@
 // config/conexao.php
 
 $dbHost = 'localhost';            // Host do MySQL
-$dbUser = 'crbhlspv_ivoneerp';    // Usuário do banco
+$dbUser = 'crbhlspv_ivoneerptest';    // Usuário do banco
 $dbPass = '@Sinaboy123**@';       // Senha do usuário
 $dbName = 'crbhlspv_ivoneerp';    // Nome do banco
 
