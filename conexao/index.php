@@ -1,0 +1,1 @@
+<?php $db = mysqli_connect('localhost','root','','ivoneerp') or die("<h3 style='text-align:center;margin-top: 50px;'>Nao e possível se conectar ao banco de dados</h3>"); ?>

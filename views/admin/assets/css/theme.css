@@ -1,0 +1,120 @@
+:root{
+  --ph-primary:#294c8b;
+  --ph-primary-dark:#1f3a6a;
+  --ph-teal:#00796b;
+  --ph-teal-dark:#004d40;
+  --ph-accent:#009EFB;
+  --ph-warning:#ffb300;
+  --ph-danger:#c62828;
+  --ph-muted:#9e9e9e;
+  --ph-bg:#f5f7f6;
+  --ph-surface:#ffffff;
+  --ph-border:#e0e0e0;
+}
+
+body{
+  background-color:var(--ph-bg);
+}
+
+.sidebar{
+  background-color:var(--ph-surface);
+}
+.header{
+  background-color:#009EFB !important;
+}
+
+/* Soft animated gradient overlay for header */
+.header{position:relative;overflow:hidden}
+.header:before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+  background:linear-gradient(120deg, rgba(255,255,255,.15), rgba(255,255,255,0) 40%, rgba(255,255,255,.15) 80%);
+  background-size:200% 200%;
+  animation:headerShimmer 8s ease-in-out infinite;
+}
+
+/* Ensure header text/links are white for contrast */
+.header .user-menu.nav > li > a,
+.header .nav-link,
+.header .dropdown-toggle,
+.header .logo span {
+  color:#ffffff !important;
+}
+
+.btn-primary{background-color:var(--ph-primary);border-color:var(--ph-primary)}
+.btn-primary:hover{background-color:var(--ph-primary-dark);border-color:var(--ph-primary-dark)}
+
+.btn-success{background-color:var(--ph-teal);border-color:var(--ph-teal)}
+.btn-success:hover{background-color:var(--ph-teal-dark);border-color:var(--ph-teal-dark)}
+
+.btn-warning{background-color:var(--ph-warning);border-color:var(--ph-warning);color:#263238}
+.btn-danger{background-color:#ef5350;border-color:#ef5350}
+
+.badge.bg-success{background-color:var(--ph-primary)!important}
+.badge.bg-warning{background-color:#ffe082!important;color:#5d4037}
+.badge.bg-danger{background-color:#ffcdd2!important;color:#b71c1c}
+
+.table thead th{background:#e8f5e9;border-color:var(--ph-border);color:#2e7d32}
+.table-bordered td,.table-bordered th{border-color:var(--ph-border)}
+
+.modal-header{border-bottom:1px solid var(--ph-border)}
+
+/* Forms */
+.form-control.is-invalid{border-color:#e53935;box-shadow:none}
+.invalid-feedback{display:block}
+
+/* DataTables tweaks */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current{
+  background:var(--ph-primary);border-color:var(--ph-primary);color:#fff!important
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover{background:#c8e6c9;border-color:#c8e6c9}
+
+/* Dashboard widgets and cards */
+.dash-widget{
+  background:var(--ph-surface);
+  border:1px solid var(--ph-border);
+  border-radius:14px;
+  box-shadow:0 6px 16px rgba(0,0,0,.06);
+  transition:transform .2s ease, box-shadow .2s ease;
+  overflow:hidden;
+  animation:fadeInUp .5s ease both;
+}
+.dash-widget:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 24px rgba(0,0,0,.10);
+}
+.dash-widget .dash-widget-info h3{color:var(--ph-primary)}
+.dash-widget-bg1,.dash-widget-bg2,.dash-widget-bg3,.dash-widget-bg4{
+  background:linear-gradient(135deg, var(--ph-primary) 0%, var(--ph-accent) 100%);
+  background-size:160% 160%;
+  animation:gradientMove 12s ease infinite;
+}
+
+.card{
+  border-radius:14px;
+  border:1px solid var(--ph-border);
+  box-shadow:0 4px 12px rgba(0,0,0,.05);
+  transition:transform .2s ease, box-shadow .2s ease;
+  animation:fadeIn .6s ease both;
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.08)}
+.card-header{border-bottom:1px solid var(--ph-border)}
+
+.table tbody tr{transition:background-color .2s ease}
+.table tbody tr:hover{background:#f1f5ff}
+
+.btn{transition:transform .15s ease}
+.btn:hover{transform:translateY(-1px)}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes headerShimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+/* Trend badges */
+.trend-badge{
+  display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:2px 8px;border-radius:999px;font-size:11px;
+  background:#f1f5ff;color:#294c8b;border:1px solid #e0e7ff;
+}
+.trend-badge i{font-size:10px;opacity:.9}
+.trend-up{background:#e8f5e9;color:#2e7d32;border-color:#c8e6c9}
+.trend-down{background:#ffebee;color:#c62828;border-color:#ffcdd2}

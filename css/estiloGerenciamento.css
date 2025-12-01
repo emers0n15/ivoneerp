@@ -1,0 +1,289 @@
+*{
+	margin: 0;
+	padding: 0;
+	text-decoration: none;
+	list-style: none;
+	font-family: sans-serif;
+}
+a{
+	cursor: pointer;
+}
+body{
+	/*background-image: url(../img/background/SGN_03_17_2021_1615958283939.png);
+	background-position: center;
+	background-size: cover;
+	background-attachment: fixed;
+	background-repeat: no-repeat;*/
+	width: 100%;
+}
+
+
+.menu{
+	width: 65%;
+	margin: 5% auto;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-around;
+	flex-wrap: wrap;
+}
+
+.menu:nth-child(1){
+	margin-top: 9%;
+}
+
+.menu .btn{
+	width: 100px;
+	text-align: center;
+	background-color: #00B7FF;
+	border-radius: 4px;
+	color: #fff;
+	padding: 10px;
+}
+
+.menu .btn:hover{
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+}
+
+.menu .btn img{
+	width: inherit;
+	height: 100px;
+}
+
+.listas{
+	width: 50%;
+	position: absolute;
+	top:15%;
+	left: 25%;
+	clear: both;
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	background-color: rgba(255,255,255,1);
+	text-align: center;
+	display: none;
+	padding-top: 10px;
+}
+
+.listas ul{
+	list-style: none;
+}
+
+.listas ul li{
+	margin: 40px 0px;
+	background-color: #00B7FF;
+	padding: 5px;
+	color: #fff;
+	width: 70%;
+	margin-left: 15%;
+}
+
+.listas ul li:hover{
+	background-color: #ccc;
+	cursor: pointer;
+}
+
+.listas .btn{
+	margin-left: 96%;
+}
+
+.listas .btn a img{
+	width: 16px;
+	height: 16px;
+}
+
+.listaVenda{
+	width: 80%;
+	position: absolute;
+	top: 5%;
+	left: 10%;
+	clear: both;
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	background-color: rgba(255,255,255,1);
+	text-align: center;
+	height: 600px;
+	padding-top: 10px;
+	display: none;
+	overflow: scroll;
+}
+
+.listaVenda .btn{
+	margin-left: 96%;
+}
+
+.listaVenda .btn a img{
+	width: 16px;
+	height: 16px;
+}
+
+.listaVenda table{
+	width: 100%;
+	height: 460px;
+}
+
+.listaFactura{
+	width: 80%;
+	position: absolute;
+	top: 5%;
+	left: 10%;
+	clear: both;
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	background-color: rgba(255,255,255,1);
+	text-align: center;
+	height: 600px;
+	padding-top: 10px;
+	display: none;
+	overflow: scroll;
+}
+
+.listaFactura .btn{
+	margin-left: 96%;
+}
+
+.listaFactura .btn a img{
+	width: 16px;
+	height: 16px;
+}
+
+.listaFactura table{
+	width: 100%;
+	height: 460px;
+}
+
+
+.listaCaixa{
+	width: 80%;
+	position: absolute;
+	top: 5%;
+	left: 10%;
+	clear: both;
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	background-color: rgba(255,255,255,1);
+	text-align: center;
+	height: 600px;
+	padding-top: 10px;
+	display: none;
+	overflow: scroll;
+}
+
+.listaCaixa .btn{
+	margin-left: 96%;
+}
+
+.listaCaixa .btn a img{
+	width: 16px;
+	height: 16px;
+}
+
+.listaCaixa table{
+	width: 100%;
+	height: 460px;
+}
+
+.listaProduto{
+	width: 80%;
+	position: absolute;
+	top: 5%;
+	left: 10%;
+	clear: both;
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	background-color: rgba(255,255,255,1);
+	text-align: center;
+	height: 600px;
+	padding-top: 10px;
+	display: none;
+	overflow: scroll;
+}
+
+.listaProduto .btn{
+	margin-left: 96%;
+}
+
+.listaProduto .btn a img{
+	width: 16px;
+	height: 16px;
+}
+
+.listaProduto table{
+	width: 100%;
+	height: 460px;
+}
+
+.listaCliente{
+	width: 80%;
+	position: absolute;
+	top: 5%;
+	left: 10%;
+	clear: both;
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	background-color: rgba(255,255,255,1);
+	text-align: center;
+	height: 600px;
+	padding-top: 10px;
+	display: none;
+	overflow: scroll;
+}
+
+.listaCliente .btn{
+	margin-left: 96%;
+}
+
+.listaCliente .btn a img{
+	width: 16px;
+	height: 16px;
+}
+
+.listaCliente table{
+	width: 100%;
+	height: 460px;
+}
+
+.listaUsuario{
+	width: 80%;
+	position: absolute;
+	top: 5%;
+	left: 10%;
+	clear: both;
+	-webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-o-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	-ms-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.8);
+	background-color: rgba(255,255,255,1);
+	text-align: center;
+	height: 600px;
+	padding-top: 10px;
+	display: none;
+	overflow: scroll;
+}
+
+.listaUsuario .btn{
+	margin-left: 96%;
+}
+
+.listaUsuario .btn a img{
+	width: 16px;
+	height: 16px;
+}
+
+.listaUsuario table{
+	width: 100%;
+	height: 460px;
+}

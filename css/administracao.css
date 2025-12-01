@@ -1,0 +1,239 @@
+body{
+	background-color: #fff;
+	padding: 0;
+	margin: 0;
+	font-family: sans-serif;
+}
+
+.principal{
+	margin: 0;
+	width: 100%;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+.esquerda{
+	width: 15%;
+	height: 100%;
+	background-color: #666;
+}
+.esquerda .logo{
+	padding: 5px 10px;
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	background-color: #222222;
+	color: #fff;
+}
+.esquerda .logo .img img{
+	width: 45px;
+	height: 45px;
+}
+.esquerda .logo .titulo h1{
+	margin: 5px 0px 0px 10px;
+	font-family: Poor Richard;
+}
+.esquerda .nav{
+	padding: 0;
+	margin: 0;
+	width: 100%;
+}
+.esquerda .nav ul{
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 80%;
+}
+.esquerda .nav .ul li ul{
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 70%;
+}
+.esquerda .nav .ul li{
+	padding: 10px 5px;
+	width: 80%;
+	color: #fff;
+}
+.esquerda .nav .ul li.cad ul{
+	display: none;
+}
+.esquerda .nav .ul li.cad:hover ul{
+	display: block;
+	background-color: #666;
+	color: #fff;
+}
+.esquerda .nav .ul li.rel ul{
+	display: none;
+}
+.esquerda .nav .ul li.rel:hover ul{
+	display: block;
+	background-color: #666;
+	color: #fff;
+}
+.esquerda .nav .ul li{
+	padding: 10px 5px;
+	width: 80%;
+	color: #fff;
+	cursor: pointer;
+}
+.esquerda .nav .ul li:hover{
+	background-color: #fff;
+	color: #000;
+}
+
+
+.direita{
+	width: 85%;
+	height: 100%;
+}
+.direita .header{
+	padding: 5px 10px;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	background-color: #222222;
+	color: #fff;
+}
+.direita .header .userTime .h2{
+	margin: 15px 0px 0px 0px;
+}
+.direita .header .userTime .h3{
+	margin: 15px 15px 0px 10px;
+}
+.direita .header .userTime{
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+}
+.direita .header .closeOpen img{
+	width: 45px;
+	height: 45px;
+}
+.direita .window{
+	padding: 5px 10px;
+}
+.geralHeader .box{
+	width: 95%;
+	margin: 10px auto;
+	border-radius: 5px;
+	padding: 10px 10px;
+	-webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.5);
+	-o-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.5);
+	-ms-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.5);
+	box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.5);
+}
+.geralHeader .grupo-head{
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+}
+.geralHeader .box .p{
+	font-size: 18pt;
+}
+.geralHeader .box p img{
+	width: 35px;
+	height: 35px;
+}
+.geralHeader .box .p span:nth-child(2){
+	margin-top: 5px;
+}
+.geralHeader .grupo-inputs p{
+	text-align: right;
+}
+.geralHeader .grupo-inputs p span:nth-child(2){
+	margin-left: 5%;
+}
+.geralHeader .grupo-inputs p span:nth-child(2) input{
+	width: 85%;
+	padding: 8px 2px;
+	border:0.5px solid #ccc;
+}
+.geralHeader .grupo-inputs p span:nth-child(2) select{
+	width: 86%;
+	padding: 8px 2px;
+	border:0.5px solid #ccc;
+}
+.geralHeader .grupo-inputs p span:nth-child(2) select option{
+	padding: 8px 2px;
+	margin: 5px 0px;
+}
+.geralHeader .box .btns button{
+	padding: 8px 15px;
+	background-color: #2285FF;
+	border-radius: 4px;
+	border:none;
+	color: #fff;
+}
+.geralHeader .table .look{
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+.geralHeader .table .tabela table{
+	width: 100%;
+	text-align: center;
+	border-collapse: collapse;
+}
+.geralHeader .table .tabela table thead{
+	background-color: #999;
+	color: #fff;
+}
+.geralHeader .table .tabela table thead th{
+	padding: 10px 5px;
+}
+.geralHeader .table .tabela table tbody tr{
+	background-color: #fff;
+	color: #999;
+}
+.geralHeader .table .tabela table tbody tr td{
+	padding: 10px 5px;
+
+}
+.geralHeader .table .tabela table tbody tr:hover{
+	background-color: #999;
+	color: #fff;
+}
+.geralHeader .table .tabela #p{
+	color: #05B605;
+}
+
+/*medias para responsividade*/
+@media(max-width: 1090px){
+	.principal{
+		flex-direction: column;
+		align-items: center;
+	}
+	.esquerda{
+		width: 100%;
+	}
+	.direita{
+		width: 100%;
+	}
+	.geralHeader .grupo-inputs p{
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		width: 100%;
+		text-align: left;
+	}
+	.geralHeader .grupo-inputs p span{
+		width: 100%;
+		margin: 2px 0px;
+	}
+	.geralHeader .grupo-inputs p input{
+		width: 100%;
+	}
+	.geralHeader .grupo-inputs p select{
+		width: 100%;
+	}
+	.geralHeader .grupo-inputs p span:nth-child(2){
+		margin-left: 0%;
+	}
+	.geralHeader .table .tabela{
+		overflow-x: auto;
+	}
+}
