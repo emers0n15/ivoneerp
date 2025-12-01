@@ -56,13 +56,15 @@ if($rs_faturas) {
 $stats['pendentes'] = 0;
 if($factura_recepcao_exists) {
     // Contar faturas sem pagamento completo
-    $sql_pendentes = "SELECT COUNT(*) as total FROM factura_recepcao f
-                      WHERE NOT EXISTS (
-                          SELECT 1 FROM pagamentos_recepcao p 
-                          WHERE p.factura_id = f.id 
-                          GROUP BY p.factura_id 
-                          HAVING SUM(p.valor_pago) >= f.valor
-                      )";
+    $sql_pendentes = "SELECT COUNT(*) as total
+                      FROM factura_recepcao f
+                      LEFT JOIN (
+                          SELECT factura_recepcao_id, SUM(valor_pago) AS total_pago
+                          FROM pagamentos_recepcao
+                          WHERE factura_recepcao_id IS NOT NULL
+                          GROUP BY factura_recepcao_id
+                      ) pag ON pag.factura_recepcao_id = f.id
+                      WHERE COALESCE(pag.total_pago, 0) < f.valor";
 } else {
     $sql_pendentes = "SELECT COUNT(*) as total FROM faturas_atendimento WHERE status = 'pendente'";
 }
@@ -78,7 +80,7 @@ if($factura_recepcao_exists) {
     // Somar pagamentos de hoje relacionados a factura_recepcao
     $sql_total_hoje = "SELECT COALESCE(SUM(p.valor_pago), 0) as total 
                        FROM pagamentos_recepcao p
-                       INNER JOIN factura_recepcao f ON p.factura_id = f.id
+                       INNER JOIN factura_recepcao f ON p.factura_recepcao_id = f.id
                        WHERE DATE(p.data_pagamento) = CURDATE()";
 } else {
     $sql_total_hoje = "SELECT COALESCE(SUM(total), 0) as total FROM faturas_atendimento WHERE status = 'paga' AND DATE(data_atendimento) = CURDATE()";
@@ -104,9 +106,9 @@ if($pacientes_table_exists) {
 $stats['pagas_hoje'] = 0;
 if($factura_recepcao_exists) {
     // Contar faturas pagas hoje (com pagamento completo)
-    $sql_pagas = "SELECT COUNT(DISTINCT f.id) as total 
+    $sql_pagas = "SELECT f.id
                   FROM factura_recepcao f
-                  INNER JOIN pagamentos_recepcao p ON p.factura_id = f.id
+                  INNER JOIN pagamentos_recepcao p ON p.factura_recepcao_id = f.id
                   WHERE DATE(p.data_pagamento) = CURDATE()
                   GROUP BY f.id
                   HAVING SUM(p.valor_pago) >= f.valor";
@@ -513,7 +515,7 @@ if($factura_recepcao_exists) {
                         <?php
                         if($factura_recepcao_exists) {
                             $sql_recentes = "SELECT f.*, p.nome, p.apelido,
-                                            COALESCE((SELECT SUM(valor_pago) FROM pagamentos_recepcao WHERE factura_id = f.id), 0) as total_pago
+                                            COALESCE((SELECT SUM(valor_pago) FROM pagamentos_recepcao WHERE factura_recepcao_id = f.id), 0) as total_pago
                                             FROM factura_recepcao f 
                                             INNER JOIN pacientes p ON f.paciente = p.id 
                                             ORDER BY f.data DESC 
