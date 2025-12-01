@@ -4,6 +4,12 @@ include_once '../../../conexao/index.php';
 error_reporting(E_ALL);
 date_default_timezone_set('Africa/Maputo');
 
+$tableExistsFn = function(mysqli $con, string $nomeTabela): bool {
+    $nomeTabela = mysqli_real_escape_string($con, $nomeTabela);
+    $resultado = mysqli_query($con, "SHOW TABLES LIKE '$nomeTabela'");
+    return $resultado && mysqli_num_rows($resultado) > 0;
+};
+
 $userID = $_SESSION['idUsuario'] ?? null;
 $fatura_id = isset($_POST['fatura_id']) && $_POST['fatura_id'] != '' && $_POST['fatura_id'] != 'null' ? intval($_POST['fatura_id']) : null;
 
@@ -60,26 +66,59 @@ if(!$table_serv_exists || mysqli_num_rows($table_serv_exists) == 0) {
     exit;
 }
 
-$sql_servicos = "SELECT fs.*, s.nome as servico_nome 
-                 FROM fa_servicos_fact_recepcao fs 
-                 INNER JOIN servicos_clinica s ON fs.servico = s.id 
-                 WHERE fs.factura = ?";
-$stmt_servicos = mysqli_prepare($db, $sql_servicos);
-mysqli_stmt_bind_param($stmt_servicos, "i", $fatura_id);
+$tem_dv_det = $tableExistsFn($db, 'dv_servicos_fact') && $tableExistsFn($db, 'devolucao_recepcao');
+
+if($tem_dv_det) {
+    $sql_servicos = "SELECT 
+                        fs.servico,
+                        SUM(fs.qtd) AS qtd_total,
+                        SUM(fs.total) AS total_original,
+                        (CASE WHEN SUM(fs.qtd) > 0 THEN SUM(fs.total)/SUM(fs.qtd) ELSE 0 END) AS preco_unit,
+                        (SUM(fs.qtd) - (
+                            SELECT COALESCE(SUM(dvf.qtd), 0)
+                            FROM dv_servicos_fact dvf
+                            INNER JOIN devolucao_recepcao dv ON dv.id = dvf.devolucao_id
+                            WHERE dv.factura_recepcao_id = ? AND dvf.servico = fs.servico
+                        )) AS qtd_disponivel
+                     FROM fa_servicos_fact_recepcao fs 
+                     WHERE fs.factura = ?
+                     GROUP BY fs.servico
+                     HAVING qtd_disponivel > 0";
+    $stmt_servicos = mysqli_prepare($db, $sql_servicos);
+    mysqli_stmt_bind_param($stmt_servicos, "ii", $fatura_id, $fatura_id);
+} else {
+    $sql_servicos = "SELECT 
+                        fs.servico,
+                        SUM(fs.qtd) AS qtd_total,
+                        SUM(fs.total) AS total_original,
+                        (CASE WHEN SUM(fs.qtd) > 0 THEN SUM(fs.total)/SUM(fs.qtd) ELSE 0 END) AS preco_unit,
+                        SUM(fs.qtd) AS qtd_disponivel
+                     FROM fa_servicos_fact_recepcao fs 
+                     WHERE fs.factura = ?
+                     GROUP BY fs.servico
+                     HAVING qtd_disponivel > 0";
+    $stmt_servicos = mysqli_prepare($db, $sql_servicos);
+    mysqli_stmt_bind_param($stmt_servicos, "i", $fatura_id);
+}
+
 mysqli_stmt_execute($stmt_servicos);
 $rs_servicos = mysqli_stmt_get_result($stmt_servicos);
 
 if(!$rs_servicos || mysqli_num_rows($rs_servicos) == 0) {
-    echo 7; // Nenhum serviço encontrado
+    echo 7; // Nenhum serviço disponível para devolução
     exit;
 }
 
-// Inserir todos os serviços na tabela temporária
+// Inserir serviços disponíveis na tabela temporária
 $erro = false;
+$servicos_inseridos = 0;
 while($servico = mysqli_fetch_array($rs_servicos)) {
     $servico_id = intval($servico['servico']);
-    $qtd = intval($servico['qtd']);
-    $preco = floatval($servico['preco']);
+    $qtd = intval($servico['qtd_disponivel']);
+    if($qtd <= 0) {
+        continue;
+    }
+    $preco = floatval($servico['preco_unit']);
     $total = $preco * $qtd;
     
     if($empresa_id && $empresa_id > 0) {
@@ -97,10 +136,13 @@ while($servico = mysqli_fetch_array($rs_servicos)) {
         error_log("Erro ao inserir serviço na devolução: " . mysqli_error($db));
         break;
     }
+    $servicos_inseridos++;
 }
 
 if($erro) {
     echo 31; // Erro ao inserir serviços
+} elseif($servicos_inseridos === 0) {
+    echo 7; // Nenhum serviço disponível após validação
 } else {
     echo 3; // Sucesso
 }

@@ -4,6 +4,14 @@
       header("location:../../");
     }
     include_once '../../conexao/index.php';
+
+    if (!function_exists('tabelaExiste')) {
+        function tabelaExiste(mysqli $con, string $nomeTabela): bool {
+            $nomeTabela = mysqli_real_escape_string($con, $nomeTabela);
+            $resultado = mysqli_query($con, "SHOW TABLES LIKE '$nomeTabela'");
+            return $resultado && mysqli_num_rows($resultado) > 0;
+        }
+    }
     error_reporting(E_ALL);
     $_SESSION['idUsuario'] = $_SESSION['idUsuario'];
     $_SESSION['nomeUsuario'] = $_SESSION['nomeUsuario'];
@@ -137,11 +145,27 @@
                                 $check_table = "SHOW TABLES LIKE 'factura_recepcao'";
                                 $table_exists = mysqli_query($db, $check_table);
                                 if($table_exists && mysqli_num_rows($table_exists) > 0) {
-                                    $sql = "SELECT f.*, p.nome, p.apelido, p.numero_processo, e.nome as empresa_nome
-                                            FROM factura_recepcao f 
-                                            INNER JOIN pacientes p ON f.paciente = p.id 
-                                            LEFT JOIN empresas_seguros e ON f.empresa_id = e.id
-                                            ORDER BY f.data DESC LIMIT 50";
+                                    $tem_pagamentos = tabelaExiste($db, 'pagamentos_recepcao');
+                                    $tem_nc = tabelaExiste($db, 'nota_credito_recepcao');
+                                    $tem_nd = tabelaExiste($db, 'nota_debito_recepcao');
+                                    $tem_dv = tabelaExiste($db, 'devolucao_recepcao');
+
+                                    $sub_pagamentos = $tem_pagamentos ? "(SELECT COALESCE(SUM(valor_pago), 0) FROM pagamentos_recepcao WHERE factura_recepcao_id = f.id OR (fatura_id = f.id AND factura_recepcao_id IS NULL))" : "0";
+                                    $sub_nc = $tem_nc ? "(SELECT COALESCE(SUM(valor), 0) FROM nota_credito_recepcao WHERE factura_recepcao_id = f.id)" : "0";
+                                    $sub_nd = $tem_nd ? "(SELECT COALESCE(SUM(valor), 0) FROM nota_debito_recepcao WHERE factura_recepcao_id = f.id)" : "0";
+                                    $sub_dv = $tem_dv ? "(SELECT COALESCE(SUM(valor), 0) FROM devolucao_recepcao WHERE factura_recepcao_id = f.id)" : "0";
+
+                                    $sql = "SELECT dados.*
+                                            FROM (
+                                                SELECT f.*, p.nome, p.apelido, p.numero_processo, e.nome as empresa_nome,
+                                                       (f.valor + $sub_nd - $sub_nc - $sub_dv - $sub_pagamentos) AS valor_disponivel
+                                                FROM factura_recepcao f 
+                                                INNER JOIN pacientes p ON f.paciente = p.id 
+                                                LEFT JOIN empresas_seguros e ON f.empresa_id = e.id
+                                            ) dados
+                                            WHERE dados.valor_disponivel > 0.01
+                                            ORDER BY dados.data DESC 
+                                            LIMIT 50";
                                     $rs = mysqli_query($db, $sql);
                                     while ($dados = mysqli_fetch_array($rs)) {
                                         $fatura_text = "FA#" . $dados['serie'] . "/" . str_pad($dados['n_doc'], 6, '0', STR_PAD_LEFT) . " - " . 
@@ -212,11 +236,29 @@
                         $check_table_serv = "SHOW TABLES LIKE 'fa_servicos_fact_recepcao'";
                         $table_serv_exists = mysqli_query($db, $check_table_serv);
                         if($table_serv_exists && mysqli_num_rows($table_serv_exists) > 0) {
-                            $sql_servicos = "SELECT fs.*, s.nome as servico_nome, s.categoria 
-                                           FROM fa_servicos_fact_recepcao fs 
-                                           INNER JOIN servicos_clinica s ON fs.servico = s.id 
-                                           WHERE fs.factura = $fatura_selecionada
-                                           ORDER BY s.categoria, s.nome";
+                            $tem_dv_det = tabelaExiste($db, 'dv_servicos_fact') && tabelaExiste($db, 'devolucao_recepcao');
+                            $sub_qtd_devolvida = $tem_dv_det
+                                ? "(SELECT COALESCE(SUM(dvf.qtd), 0) 
+                                   FROM dv_servicos_fact dvf 
+                                   INNER JOIN devolucao_recepcao dv ON dv.id = dvf.devolucao_id 
+                                   WHERE dv.factura_recepcao_id = $fatura_selecionada AND dvf.servico = fs.servico)"
+                                : "0";
+
+                            $sql_servicos = "SELECT 
+                                                fs.servico,
+                                                s.nome AS servico_nome,
+                                                s.categoria,
+                                                SUM(fs.qtd) AS qtd_total,
+                                                SUM(fs.total) AS total_original,
+                                                (CASE WHEN SUM(fs.qtd) > 0 THEN SUM(fs.total)/SUM(fs.qtd) ELSE 0 END) AS preco_unit,
+                                                $sub_qtd_devolvida AS qtd_devolvida,
+                                                (SUM(fs.qtd) - $sub_qtd_devolvida) AS qtd_disponivel
+                                            FROM fa_servicos_fact_recepcao fs 
+                                            INNER JOIN servicos_clinica s ON fs.servico = s.id 
+                                            WHERE fs.factura = $fatura_selecionada
+                                            GROUP BY fs.servico, s.nome, s.categoria
+                                            HAVING qtd_disponivel > 0
+                                            ORDER BY s.categoria, s.nome";
                             $rs_servicos = mysqli_query($db, $sql_servicos);
                     ?>
                     <table id="example" style="height: 86%;width: 100%;">
@@ -224,7 +266,7 @@
                             <th>#</th>
                             <th>Serviço</th>
                             <th>Categoria</th>
-                            <th>Qtd</th>
+                            <th>Qtd disp.</th>
                             <th>Preço Unit.</th>
                             <th>Total</th>
                         </thead>
@@ -233,8 +275,8 @@
                             if($rs_servicos && mysqli_num_rows($rs_servicos) > 0) {
                                 while ($servico = mysqli_fetch_array($rs_servicos)) {
                                     $servico_id = $servico['servico'];
-                                    $preco_unit = floatval($servico['preco']);
-                                    $qtd = intval($servico['qtd']);
+                                    $preco_unit = floatval($servico['preco_unit']);
+                                    $qtd = intval($servico['qtd_disponivel']);
                                     $total_item = $preco_unit * $qtd;
                             ?>
                             <tr data-idservico="<?php echo $servico_id; ?>" data-preco="<?php echo $preco_unit; ?>" data-qtd="<?php echo $qtd; ?>">
