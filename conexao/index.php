@@ -4,7 +4,7 @@
 $dbHost = 'localhost';            // Host do MySQL
 $dbUser = 'crbhlspv_ivoneerptest';    // Usuário do banco
 $dbPass = '@Sinaboy123**@';       // Senha do usuário
-$dbName = 'crbhlspv_ivoneerp';    // Nome do banco
+$dbName = 'crbhlspv_ivoneerptest';    // Nome do banco
 
 // Conectar ao banco
 $mysqli = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
