@@ -1,6 +1,11 @@
 <?php
 // config/conexao.php
 
+// Ativa exibição de erros para qualquer arquivo que inclua esta conexão
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $dbHost = 'localhost';            // Host do MySQL
 $dbUser = 'crbhlspv_ivoneerptest';    // Usuário do banco
 $dbPass = '@Sinaboy123**@';       // Senha do usuário
