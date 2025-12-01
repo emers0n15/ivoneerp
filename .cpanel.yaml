@@ -1,0 +1,4 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/crbhlspv/public_html/test/ivoneerp 
+    - /bin/cp -r * $DEPLOYPATH
