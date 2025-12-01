@@ -52,6 +52,7 @@
                             <li class="submenu">
                                 <a href="#"><i class="fa fa-file"></i> <span> Explorador de Docs </span> <span class="menu-arrow"></span></a>
                                 <ul style="display: none;">
+                                    <li><a href="explorador_documentos.php">Visão Geral</a></li>
                                     <li><a href="rel_pedidos.php">Vendas a Dinheiro</a></li>
                                     <li><a href="factura.php">Facturas</a></li>
                                     <li><a href="cotacoes.php">Cotações</a></li>
@@ -104,6 +105,7 @@
                             <li class="submenu">
                                 <a href="#"><i class="fa fa-file"></i> <span> Explorador de Docs </span> <span class="menu-arrow"></span></a>
                                 <ul style="display: none;">
+                                    <li><a href="explorador_documentos.php">Visão Geral</a></li>
                                     <li><a href="requisicao_interna.php">Requisição Interna</a></li>
                                     <li><a href="requisicao_externa.php">Requisição Externa</a></li>
                                 </ul>
@@ -158,6 +160,7 @@
                             <li class="submenu">
                                 <a href="#"><i class="fa fa-file"></i> <span> Explorador de Docs </span> <span class="menu-arrow"></span></a>
                                 <ul style="display: none;">
+                                    <li><a href="explorador_documentos.php">Visão Geral</a></li>
                                     <li><a href="rel_pedidos.php">Vendas a Dinheiro</a></li>
                                     <li><a href="factura.php">Facturas</a></li>
                                     <li><a href="nota_de_credito.php">Notas de Crédito</a></li>
@@ -242,6 +245,7 @@
                             <li class="submenu">
                                 <a href="#"><i class="fa fa-file"></i> <span> Explorador de Docs </span> <span class="menu-arrow"></span></a>
                                 <ul style="display: none;">
+                                    <li><a href="explorador_documentos.php">Visão Geral</a></li>
                                     <li><a href="rel_pedidos.php">Vendas a Dinheiro</a></li>
                                     <li><a href="factura.php">Facturas</a></li>
                                     <li><a href="nota_de_credito.php">Notas de Crédito</a></li>
