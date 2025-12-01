@@ -4,6 +4,75 @@
       header("location:../../");
     }
     include_once '../../conexao/index.php';
+
+    if (!function_exists('tabelaExiste')) {
+        function tabelaExiste(mysqli $con, string $nomeTabela): bool {
+            $nomeTabela = mysqli_real_escape_string($con, $nomeTabela);
+            $resultado = mysqli_query($con, "SHOW TABLES LIKE '$nomeTabela'");
+            return $resultado && mysqli_num_rows($resultado) > 0;
+        }
+    }
+
+    if (!function_exists('garantirTabelaCt')) {
+        function garantirTabelaCt(mysqli $con, string $nomeTabela, string $sqlCriacao): void {
+            if (!tabelaExiste($con, $nomeTabela)) {
+                if (!mysqli_query($con, $sqlCriacao)) {
+                    error_log("CT Recepção: falha ao criar tabela {$nomeTabela}: " . mysqli_error($con));
+                }
+            }
+        }
+    }
+
+    // Garantir que as tabelas críticas existam para evitar erros em produção
+    $sqlCtTemp = "CREATE TABLE IF NOT EXISTS `ct_servicos_temp` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `servico` int(11) NOT NULL,
+        `qtd` int(11) NOT NULL DEFAULT 1,
+        `preco` decimal(10,2) NOT NULL,
+        `total` decimal(10,2) NOT NULL,
+        `user` int(11) NOT NULL,
+        `empresa_id` int(11) DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        KEY `servico` (`servico`),
+        KEY `user` (`user`),
+        KEY `empresa_id` (`empresa_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+
+    $sqlCtFact = "CREATE TABLE IF NOT EXISTS `ct_servicos_fact` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `servico` int(11) NOT NULL,
+        `qtd` int(11) NOT NULL,
+        `preco` decimal(10,2) NOT NULL,
+        `total` decimal(10,2) NOT NULL,
+        `user` int(11) NOT NULL,
+        `cotacao_id` int(11) NOT NULL,
+        PRIMARY KEY (`id`),
+        KEY `servico` (`servico`),
+        KEY `cotacao_id` (`cotacao_id`),
+        KEY `user` (`user`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+
+    $sqlCotacao = "CREATE TABLE IF NOT EXISTS `cotacao_recepcao` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `n_doc` int(11) NOT NULL,
+        `paciente` int(11) NOT NULL,
+        `empresa_id` int(11) DEFAULT NULL,
+        `valor` decimal(10,2) NOT NULL,
+        `prazo` date DEFAULT NULL,
+        `serie` int(11) NOT NULL,
+        `usuario` int(11) NOT NULL,
+        `dataa` date NOT NULL,
+        `data_criacao` datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        KEY `paciente` (`paciente`),
+        KEY `empresa_id` (`empresa_id`),
+        KEY `usuario` (`usuario`),
+        KEY `serie` (`serie`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+
+    garantirTabelaCt($db, 'ct_servicos_temp', $sqlCtTemp);
+    garantirTabelaCt($db, 'ct_servicos_fact', $sqlCtFact);
+    garantirTabelaCt($db, 'cotacao_recepcao', $sqlCotacao);
     error_reporting(E_ALL);
     $_SESSION['idUsuario'] = $_SESSION['idUsuario'];
     $_SESSION['nomeUsuario'] = $_SESSION['nomeUsuario'];
@@ -14,10 +83,14 @@
     $desconto_geral = 0;
     
     $userID = $_SESSION['idUsuario'];
-    $sql_limpar = "DELETE FROM ct_servicos_temp WHERE user = ?";
-    $stmt_limpar = mysqli_prepare($db, $sql_limpar);
-    mysqli_stmt_bind_param($stmt_limpar, "i", $userID);
-    mysqli_stmt_execute($stmt_limpar);
+    if (tabelaExiste($db, 'ct_servicos_temp')) {
+        $sql_limpar = "DELETE FROM ct_servicos_temp WHERE user = ?";
+        $stmt_limpar = mysqli_prepare($db, $sql_limpar);
+        if ($stmt_limpar) {
+            mysqli_stmt_bind_param($stmt_limpar, "i", $userID);
+            mysqli_stmt_execute($stmt_limpar);
+        }
+    }
     
     if($empresa_selecionada) {
         $sql_empresa = "SELECT tabela_precos_id, desconto_geral FROM empresas_seguros WHERE id = $empresa_selecionada";
