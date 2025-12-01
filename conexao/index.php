@@ -7,13 +7,13 @@ $dbPass = '@Sinaboy123**@';       // Senha do usuário
 $dbName = 'crbhlspv_ivoneerptest';    // Nome do banco
 
 // Conectar ao banco
-$mysqli = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
+$db = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
 
 // Checar conexão
-if (!$mysqli) {
+if (!$db) {
     die("<h3 style='text-align:center;margin-top:50px;'>Não é possível se conectar ao banco de dados</h3>");
 }
 
 // Definir charset para evitar problemas com acentuação
-mysqli_set_charset($mysqli, "utf8mb4");
+mysqli_set_charset($db, "utf8mb4");
 ?>
