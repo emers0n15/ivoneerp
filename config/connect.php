@@ -1,1 +1,1 @@
-<?php $link = mysqli_connect('crbhlspv_ivoneerptest','root','','ivones') or die('Não é possível se conectar ao banco de dados'); ?>
+<?php $link = mysqli_connect('crbhlspv_ivoneerptest	','root','','ivones') or die('Não é possível se conectar ao banco de dados'); ?>
