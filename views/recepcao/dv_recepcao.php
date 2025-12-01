@@ -569,8 +569,11 @@
                 }
             }
             
-            if(faturaSelecionada) {
-                $('#example').DataTable();
+            if(faturaSelecionada && $('#example').length) {
+                var possuiServicos = $('#example tbody tr[data-idservico]').length > 0;
+                if(possuiServicos) {
+                    $('#example').DataTable();
+                }
             }
         });
     </script>
