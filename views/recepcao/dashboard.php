@@ -106,15 +106,18 @@ if($pacientes_table_exists) {
 $stats['pagas_hoje'] = 0;
 if($factura_recepcao_exists) {
     // Contar faturas pagas hoje (com pagamento completo)
-    $sql_pagas = "SELECT f.id
-                  FROM factura_recepcao f
-                  INNER JOIN pagamentos_recepcao p ON p.factura_recepcao_id = f.id
-                  WHERE DATE(p.data_pagamento) = CURDATE()
-                  GROUP BY f.id
-                  HAVING SUM(p.valor_pago) >= f.valor";
+    $sql_pagas = "SELECT COUNT(*) as total FROM (
+                    SELECT f.id, SUM(p.valor_pago) AS total_pago, MAX(f.valor) AS valor_total
+                    FROM factura_recepcao f
+                    INNER JOIN pagamentos_recepcao p ON p.factura_recepcao_id = f.id
+                    WHERE DATE(p.data_pagamento) = CURDATE()
+                    GROUP BY f.id
+                    HAVING total_pago >= valor_total
+                  ) pagas";
     $rs_pagas = mysqli_query($db, $sql_pagas);
     if($rs_pagas) {
-        $stats['pagas_hoje'] = mysqli_num_rows($rs_pagas);
+        $dados_pagas = mysqli_fetch_assoc($rs_pagas);
+        $stats['pagas_hoje'] = $dados_pagas ? intval($dados_pagas['total']) : 0;
     }
 } else {
     $sql_pagas = "SELECT COUNT(*) as total FROM faturas_atendimento WHERE status = 'paga' AND DATE(data_atendimento) = CURDATE()";
