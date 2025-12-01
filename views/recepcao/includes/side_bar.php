@@ -37,6 +37,9 @@
                                 <li><a href="rc_recepcao.php" target="_blank">RC - Recibo</a></li>
                             </ul>
                         </li>
+                <li>
+                    <a href="explorador_documentos.php"><i class="fa fa-folder-open"></i> <span>Explorador de Docs</span></a>
+                </li>
                         <li>
                             <a href="caixa.php"><i class="fa fa-money"></i> <span>Caixa</span></a>
                         </li>
