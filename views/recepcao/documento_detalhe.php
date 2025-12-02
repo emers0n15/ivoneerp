@@ -53,12 +53,10 @@ switch($tipo){
         $titulo = 'Fatura de Atendimento';
         $sql = "SELECT f.*, 
                        p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo, p.contacto AS paciente_contacto,
-                       e.nome AS empresa_nome, e.nuit AS empresa_nuit, e.contacto AS empresa_contacto, e.email AS empresa_email,
-                       u.nome AS usuario_nome
+                       e.nome AS empresa_nome, e.nuit AS empresa_nuit, e.contacto AS empresa_contacto, e.email AS empresa_email
                 FROM factura_recepcao f
                 LEFT JOIN pacientes p ON f.paciente = p.id
                 LEFT JOIN empresas_seguros e ON f.empresa_id = e.id
-                LEFT JOIN usuarios u ON f.usuario = u.id
                 WHERE f.id = ?";
         $stmt = mysqli_prepare($db, $sql);
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
@@ -91,12 +89,10 @@ switch($tipo){
     case 'vds':
         $titulo = 'Venda a Dinheiro/Serviço';
         $sql = "SELECT v.*, p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo,
-                       e.nome AS empresa_nome, e.nuit AS empresa_nuit, e.contacto AS empresa_contacto,
-                       u.nome AS usuario_nome
+                       e.nome AS empresa_nome, e.nuit AS empresa_nuit, e.contacto AS empresa_contacto
                 FROM venda_dinheiro_servico v
                 LEFT JOIN pacientes p ON v.paciente = p.id
                 LEFT JOIN empresas_seguros e ON v.empresa_id = e.id
-                LEFT JOIN usuarios u ON v.usuario = u.id
                 WHERE v.id = ?";
         $stmt = mysqli_prepare($db, $sql);
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
@@ -123,12 +119,10 @@ switch($tipo){
     case 'ct':
         $titulo = 'Cotação';
         $sql = "SELECT c.*, p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo,
-                       e.nome AS empresa_nome, e.nuit AS empresa_nuit, e.contacto AS empresa_contacto,
-                       u.nome AS usuario_nome
+                       e.nome AS empresa_nome, e.nuit AS empresa_nuit, e.contacto AS empresa_contacto
                 FROM cotacao_recepcao c
                 LEFT JOIN pacientes p ON c.paciente = p.id
                 LEFT JOIN empresas_seguros e ON c.empresa_id = e.id
-                LEFT JOIN usuarios u ON c.usuario = u.id
                 WHERE c.id = ?";
         $stmt = mysqli_prepare($db, $sql);
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
@@ -158,13 +152,11 @@ switch($tipo){
         $sql = "SELECT nc.*, 
                        f.n_doc AS fatura_n_doc, f.serie AS fatura_serie,
                        p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo,
-                       e.nome AS empresa_nome, e.nuit AS empresa_nuit,
-                       u.nome AS usuario_nome
+                       e.nome AS empresa_nome, e.nuit AS empresa_nuit
                 FROM nota_credito_recepcao nc
                 LEFT JOIN factura_recepcao f ON nc.factura_recepcao_id = f.id
                 LEFT JOIN pacientes p ON nc.paciente = p.id
                 LEFT JOIN empresas_seguros e ON nc.empresa_id = e.id
-                LEFT JOIN usuarios u ON nc.usuario = u.id
                 WHERE nc.id = ?";
         $stmt = mysqli_prepare($db, $sql);
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
@@ -194,13 +186,11 @@ switch($tipo){
         $sql = "SELECT nd.*, 
                        f.n_doc AS fatura_n_doc, f.serie AS fatura_serie,
                        p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo,
-                       e.nome AS empresa_nome, e.nuit AS empresa_nuit,
-                       u.nome AS usuario_nome
+                       e.nome AS empresa_nome, e.nuit AS empresa_nuit
                 FROM nota_debito_recepcao nd
                 LEFT JOIN factura_recepcao f ON nd.factura_recepcao_id = f.id
                 LEFT JOIN pacientes p ON nd.paciente = p.id
                 LEFT JOIN empresas_seguros e ON nd.empresa_id = e.id
-                LEFT JOIN usuarios u ON nd.usuario = u.id
                 WHERE nd.id = ?";
         $stmt = mysqli_prepare($db, $sql);
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
@@ -230,13 +220,11 @@ switch($tipo){
         $sql = "SELECT dv.*, 
                        f.n_doc AS fatura_n_doc, f.serie AS fatura_serie,
                        p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo,
-                       e.nome AS empresa_nome, e.nuit AS empresa_nuit,
-                       u.nome AS usuario_nome
+                       e.nome AS empresa_nome, e.nuit AS empresa_nuit
                 FROM devolucao_recepcao dv
                 LEFT JOIN factura_recepcao f ON dv.factura_recepcao_id = f.id
                 LEFT JOIN pacientes p ON dv.paciente = p.id
                 LEFT JOIN empresas_seguros e ON dv.empresa_id = e.id
-                LEFT JOIN usuarios u ON dv.usuario = u.id
                 WHERE dv.id = ?";
         $stmt = mysqli_prepare($db, $sql);
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
@@ -266,12 +254,10 @@ switch($tipo){
         $titulo = 'Recibo';
         $sql = "SELECT rc.*, 
                        p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo,
-                       e.nome AS empresa_nome, e.nuit AS empresa_nuit,
-                       u.nome AS usuario_nome
+                       e.nome AS empresa_nome, e.nuit AS empresa_nuit
                 FROM recibo_recepcao rc
                 LEFT JOIN pacientes p ON rc.paciente = p.id
                 LEFT JOIN empresas_seguros e ON rc.empresa_id = e.id
-                LEFT JOIN usuarios u ON rc.usuario = u.id
                 WHERE rc.id = ?";
         $stmt = mysqli_prepare($db, $sql);
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
