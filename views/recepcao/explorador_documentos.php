@@ -345,6 +345,7 @@ $cards = [
             margin-bottom: 18px;
             min-height: 90px;
             box-shadow: 0 14px 40px rgba(15,23,42,0.18);
+            border: 1px solid rgba(15,23,42,0.85);
             position: relative;
             overflow: hidden;
             display: flex;
@@ -379,22 +380,27 @@ $cards = [
         }
         .doc-card .card-value {
             font-size: 22px;
-            font-weight: 700;
+            font-weight: 900;
             margin: 0;
             line-height: 1.1;
+            color: #FFFFFF;
         }
         .doc-card .card-label {
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.12em;
             margin-bottom: 3px;
-            opacity: 0.9;
+            opacity: 1;
+            color: #FFFFFF;
+            font-weight: 800;
         }
         .doc-card small {
             display: block;
             margin-top: 4px;
             font-size: 12px;
-            opacity: 0.9;
+            opacity: 1;
+            color: #FFFFFF;
+            font-weight: 600;
         }
 
         .nav-pills.document-tabs {
