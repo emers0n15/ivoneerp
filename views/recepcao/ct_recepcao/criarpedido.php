@@ -75,35 +75,65 @@ if ($year == $serie) {
     }
     
     // Inserir cotação
-    $sql_ct = "INSERT INTO cotacao_recepcao SET 
-        n_doc = ?, 
-        paciente = ?, 
-        empresa_id = ?, 
-        valor = ?, 
-        prazo = ?,
-        serie = ?, 
-        usuario = ?, 
-        dataa = ?";
-    
-    $stmt_ct = mysqli_prepare($db, $sql_ct);
-    $empresa_id_db = $empresa_id ? intval($empresa_id) : 0;
-    $new_id = intval($new_id);
-    $serie = intval($serie);
-    $paciente_id = intval($paciente_id);
-    $userID = intval($userID);
-    $total = floatval($total);
-    $prazo_db = $prazo ? $prazo : null;
-    
-    mysqli_stmt_bind_param($stmt_ct, "iiidssis", 
-        $new_id,
-        $paciente_id,
-        $empresa_id_db,
-        $total,
-        $prazo_db,
-        $serie,
-        $userID,
-        $data
-    );
+    // Verificar se a coluna "prazo" existe (para compatibilidade com bases antigas)
+    $hasPrazo = false;
+    $rs_col_prazo = mysqli_query($db, "SHOW COLUMNS FROM cotacao_recepcao LIKE 'prazo'");
+    if ($rs_col_prazo && mysqli_num_rows($rs_col_prazo) > 0) {
+        $hasPrazo = true;
+    }
+
+    if ($hasPrazo) {
+        $sql_ct = "INSERT INTO cotacao_recepcao 
+                      (n_doc, paciente, empresa_id, valor, prazo, serie, usuario, dataa)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $stmt_ct = mysqli_prepare($db, $sql_ct);
+        $empresa_id_db = $empresa_id ? intval($empresa_id) : 0;
+        $new_id = intval($new_id);
+        $serie = intval($serie);
+        $paciente_id = intval($paciente_id);
+        $userID = intval($userID);
+        $total = floatval($total);
+        $prazo_db = $prazo ? $prazo : null;
+
+        mysqli_stmt_bind_param(
+            $stmt_ct,
+            "iiidisis",
+            $new_id,
+            $paciente_id,
+            $empresa_id_db,
+            $total,
+            $prazo_db,
+            $serie,
+            $userID,
+            $data
+        );
+    } else {
+        // Base antiga sem campo "prazo"
+        $sql_ct = "INSERT INTO cotacao_recepcao 
+                      (n_doc, paciente, empresa_id, valor, serie, usuario, dataa)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        $stmt_ct = mysqli_prepare($db, $sql_ct);
+        $empresa_id_db = $empresa_id ? intval($empresa_id) : 0;
+        $new_id = intval($new_id);
+        $serie = intval($serie);
+        $paciente_id = intval($paciente_id);
+        $userID = intval($userID);
+        $total = floatval($total);
+
+        mysqli_stmt_bind_param(
+            $stmt_ct,
+            "iiidiis",
+            $new_id,
+            $paciente_id,
+            $empresa_id_db,
+            $total,
+            $serie,
+            $userID,
+            $data
+        );
+    }
     
     if(mysqli_stmt_execute($stmt_ct)) {
         $ct_id = mysqli_insert_id($db);

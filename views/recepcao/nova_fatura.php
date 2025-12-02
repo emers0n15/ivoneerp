@@ -17,7 +17,14 @@ $_SESSION['categoriaUsuario'] = $_SESSION['categoriaUsuario'];
 
 // Determinar tipo de documento
 $tipo_doc = isset($_GET['tipo']) ? $_GET['tipo'] : 'fatura';
-$titulo = $tipo_doc == 'vds' ? 'Criar VDS (Venda a Dinheiro/Serviço)' : ($tipo_doc == 'cotacao' ? 'Criar Cotação' : 'Criar Nova Fatura');
+if ($tipo_doc === 'vds') {
+    $titulo = 'Criar VDS (Venda a Dinheiro/Serviço)';
+} elseif ($tipo_doc === 'cotacao') {
+    $titulo = 'Criar Cotação';
+} else {
+    $tipo_doc = 'fatura';
+    $titulo = 'Criar Nova Fatura';
+}
 
 // Buscar serviços disponíveis
 $sql_servicos = "SELECT * FROM servicos_clinica WHERE ativo = 1 ORDER BY categoria, nome";

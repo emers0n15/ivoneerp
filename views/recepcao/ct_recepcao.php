@@ -410,9 +410,7 @@
                     console.log('ID do serviço não encontrado');
                     return;
                 }
-                
                 console.log('Serviço clicado:', idServico, 'Empresa:', empresaSelecionada);
-                
                 $.ajax({
                     type: "POST",
                     url: "ct_recepcao/addservtemp.php",
@@ -440,7 +438,7 @@
                             alert("Serviço não disponível.");
                         } else if(response == 4){
                             alert("Erro: As tabelas necessárias não foram criadas. Execute o SQL de criação.");
-                        } else {
+                        } else if(response != 3){
                             console.log('Resposta inesperada:', response);
                             alert("Resposta inesperada do servidor: " + response);
                         }
@@ -608,5 +606,6 @@
         });
     </script>
     </body>
-</html>
-
+    </html>
+    
+    

@@ -606,10 +606,10 @@ $cards = [
         </div>
         <div class="page-wrapper">
             <div class="content">
-                <div class="top-header-bar">
+                <div class="top-header-bar dashboard-header">
                     <div>
-                        <h4 class="page-title">Explorador de Documentos</h4>
-                        <p class="page-subtitle">Visão consolidada de faturas, vendas, cotações, notas e recibos emitidos na recepção.</p>
+                        <h4 class="page-title dashboard-title">Explorador de Documentos</h4>
+                        <p class="page-subtitle dashboard-subtitle">Visão consolidada de faturas, vendas, cotações, notas e recibos emitidos na recepção.</p>
                     </div>
                     <div class="top-header-bar-right">
                         <div class="search-pill d-none d-md-block">
@@ -625,18 +625,18 @@ $cards = [
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="stats-grid m-b-30">
                     <?php foreach($cards as $card): ?>
-                        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                            <div class="doc-card" style="background: <?php echo $card['cor']; ?>;">
-                                <div class="doc-card-content">
-                                    <span class="card-label"><?php echo $card['label']; ?></span>
-                                    <p class="card-value"><?php echo $card['quantidade']; ?></p>
-                                    <small>Total: <?php echo formatarMoeda($card['total']); ?></small>
-                                </div>
-                                <div class="card-icon-wrapper">
-                                    <i class="fa <?php echo $card['icone']; ?> card-icon"></i>
-                                </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon" style="background: <?php echo $card['cor']; ?>;">
+                                <i class="fa <?php echo $card['icone']; ?>"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <p class="stat-card-label"><?php echo $card['label']; ?></p>
+                                <p class="stat-card-value"><?php echo $card['quantidade']; ?></p>
+                                <span class="stat-card-badge badge-up">
+                                    Total: <?php echo formatarMoeda($card['total']); ?>
+                                </span>
                             </div>
                         </div>
                     <?php endforeach; ?>
