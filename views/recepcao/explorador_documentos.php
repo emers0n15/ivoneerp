@@ -314,140 +314,214 @@ $cards = [
     <style>
         :root {
             --primary: #3D5DFF;
-            --primary-light: #EEF1FF;
+            --primary-soft: #EEF1FF;
             --accent: #38D0ED;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border-subtle: #E5E7EB;
             --card-radius: 16px;
         }
+
+        body {
+            background: #F3F4F6;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text-main);
+        }
+
+        .page-title {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
         .doc-card {
             border-radius: var(--card-radius);
             color: #fff;
-            padding: 16px 18px;
-            margin-bottom: 20px;
-            min-height: 100px;
-            max-height: 100px;
-            box-shadow: 0 14px 35px rgba(0,0,0,0.1);
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            min-height: 90px;
+            box-shadow: 0 14px 40px rgba(15,23,42,0.18);
             position: relative;
             overflow: hidden;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
         }
-        .doc-card::after {
+        .doc-card::before {
             content: "";
             position: absolute;
-            right: -40px;
-            bottom: -40px;
-            width: 140px;
-            height: 140px;
+            inset: 0;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.25), transparent 60%);
+            opacity: 0.8;
+        }
+        .doc-card-content {
+            position: relative;
+            z-index: 1;
+        }
+        .doc-card .card-icon-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
             background: rgba(255,255,255,0.18);
-            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .doc-card .card-icon {
-            font-size: 24px;
-            margin-bottom: 4px;
-            opacity: 0.95;
+            font-size: 18px;
         }
         .doc-card .card-value {
-            font-size: 26px;
-            font-weight: bold;
+            font-size: 22px;
+            font-weight: 700;
             margin: 0;
-            line-height: 1;
+            line-height: 1.1;
         }
         .doc-card .card-label {
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.12em;
             margin-bottom: 3px;
+            opacity: 0.9;
         }
         .doc-card small {
             display: block;
-            margin-top: 6px;
-            font-size: 13px;
-            opacity: 0.85;
+            margin-top: 4px;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .nav-pills.document-tabs {
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 8px;
+            margin-bottom: 18px;
         }
         .nav-pills.document-tabs .nav-link {
-            border-radius: 30px;
-            margin-right: 10px;
-            padding: 8px 18px;
-            font-weight: 600;
-            color: #111;
-            border: 1px solid #d6d6d6;
-            transition: all .2s ease;
-            background: #fff;
+            border-radius: 999px;
+            margin-right: 8px;
+            padding: 6px 16px;
+            font-weight: 500;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            background: transparent;
+            font-size: 13px;
         }
         .nav-pills.document-tabs .nav-link.active {
-            background: #000;
-            color: #fff;
-            border-color: #000;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            background: #fff;
+            color: var(--primary);
+            border-color: rgba(61,93,255,0.35);
+            box-shadow: 0 6px 18px rgba(15,23,42,0.12);
         }
+
         .document-filters {
             border-radius: var(--card-radius);
-            border: 1px solid #edf0ff;
-            box-shadow: 0 15px 35px rgba(0, 36, 125, 0.08);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 12px 28px rgba(15,23,42,0.12);
+            background: #FFFFFF;
         }
         .filter-card .form-control,
         .filter-card .form-select {
-            border-radius: 12px;
-            border-color: #dfe3ff;
+            border-radius: 999px;
+            border-color: var(--border-subtle);
             box-shadow: none;
+            font-size: 13px;
+            padding-left: 14px;
+            padding-right: 14px;
+            height: 36px;
         }
         .filter-label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #6d7593;
+            letter-spacing: 0.10em;
+            color: var(--text-muted);
         }
+
         .table-documentos {
             width: 100%;
+            border-radius: 14px;
+            overflow: hidden;
         }
         .table-documentos thead th {
-            background: #f5f7fb;
-            font-size: 12px;
+            background: #F9FAFB;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid var(--border-subtle);
+            color: #6B7280;
         }
+        .table-documentos tbody tr:hover {
+            background: #F3F4FF;
+        }
+        .table-documentos tbody td {
+            vertical-align: middle;
+            font-size: 13px;
+        }
+        .table-documentos tbody td:nth-child(5),
+        .table-documentos tbody td:nth-child(6) {
+            white-space: nowrap;
+        }
+
         .badge {
             font-size: 11px;
             padding: 5px 10px;
-            border-radius: 30px;
+            border-radius: 999px;
         }
         .table-actions .btn {
-            margin-right: 6px;
+            margin-right: 4px;
         }
+
         .detalhe-linha {
             display: flex;
             justify-content: space-between;
-            border-bottom: 1px solid #f1f1f1;
+            border-bottom: 1px solid #E5E7EB;
             padding: 8px 0;
             font-size: 14px;
         }
         .detalhe-linha span {
-            color: #7a7a7a;
+            color: var(--text-muted);
         }
+
         .status-legend {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 10px;
         }
         .status-chip {
             border-radius: 999px;
-            padding: 6px 14px;
-            font-size: 12px;
+            padding: 4px 12px;
+            font-size: 11px;
             font-weight: 600;
-            background: var(--primary-light);
-            color: #1a237e;
+            background: var(--primary-soft);
+            color: #1D4ED8;
         }
         .status-chip i {
             margin-right: 6px;
         }
+
         .filter-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: flex-end;
             flex-wrap: wrap;
+        }
+
+        .btn-outline-secondary, .btn-outline-dark, .btn-outline-primary {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 999px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -461,14 +535,14 @@ $cards = [
         </div>
         <div class="page-wrapper">
             <div class="content">
-                <div class="row">
+                <div class="row m-b-20">
                     <div class="col-sm-8 col-12">
                         <h4 class="page-title">Explorador de Documentos</h4>
-                        <p class="text-muted m-b-20">Acompanhe todos os documentos emitidos na recepção em um único ecrã.</p>
+                        <p class="page-subtitle">Visão consolidada de faturas, vendas, cotações, notas e recibos emitidos na recepção.</p>
                     </div>
                     <div class="col-sm-4 col-12 text-right">
                         <a href="fa_recepcao.php" target="_blank" class="btn btn-primary btn-rounded m-r-5"><i class="fa fa-plus"></i> Nova Fatura</a>
-                        <a href="ct_recepcao.php" target="_blank" class="btn btn-outline-primary btn-rounded m-r-5"><i class="fa fa-file"></i> Nova Cotação</a>
+                        <a href="ct_recepcao.php" target="_blank" class="btn btn-outline-primary btn-rounded m-r-5"><i class="fa fa-file-text-o"></i> Nova Cotação</a>
                     </div>
                 </div>
 
@@ -476,10 +550,14 @@ $cards = [
                     <?php foreach($cards as $card): ?>
                         <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                             <div class="doc-card" style="background: <?php echo $card['cor']; ?>;">
-                                <div class="card-icon"><i class="fa <?php echo $card['icone']; ?>"></i></div>
-                                <span class="card-label"><?php echo $card['label']; ?></span>
-                                <p class="card-value"><?php echo $card['quantidade']; ?></p>
-                                <small>Total: <?php echo formatarMoeda($card['total']); ?></small>
+                                <div class="doc-card-content">
+                                    <span class="card-label"><?php echo $card['label']; ?></span>
+                                    <p class="card-value"><?php echo $card['quantidade']; ?></p>
+                                    <small>Total: <?php echo formatarMoeda($card['total']); ?></small>
+                                </div>
+                                <div class="card-icon-wrapper">
+                                    <i class="fa <?php echo $card['icone']; ?> card-icon"></i>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
