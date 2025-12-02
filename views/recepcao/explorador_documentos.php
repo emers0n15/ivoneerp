@@ -315,22 +315,86 @@ $cards = [
         :root {
             --primary: #3D5DFF;
             --primary-soft: #EEF1FF;
-            --accent: #38D0ED;
+            --accent: #FF6A3D;
+            --accent-soft: #FFE8DF;
             --text-main: #111827;
             --text-muted: #6B7280;
             --border-subtle: #E5E7EB;
-            --card-radius: 16px;
+            --card-radius: 18px;
+            --shadow-soft: 0 18px 45px rgba(15,23,42,0.12);
         }
 
         body {
-            background: #F3F4F6;
+            background: radial-gradient(circle at top left, #EEF2FF 0, #F9FAFB 45%, #F3F4F6 100%);
             font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             color: var(--text-main);
+        }
+
+        .page-wrapper {
+            background: transparent;
+        }
+
+        .content {
+            padding: 26px 26px 32px;
+        }
+
+        @media (max-width: 767.98px) {
+            .content {
+                padding: 18px 14px 24px;
+            }
+        }
+
+        .top-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .top-header-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-pill {
+            position: relative;
+            flex: 1;
+            max-width: 320px;
+        }
+
+        .search-pill input {
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            padding-left: 34px;
+            padding-right: 14px;
+            height: 36px;
+            font-size: 13px;
+            box-shadow: 0 0 0 0 rgba(61, 93, 255, 0);
+            transition: box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .search-pill i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .search-pill input:focus {
+            outline: none;
+            border-color: rgba(61, 93, 255, 0.6);
+            box-shadow: 0 0 0 3px rgba(61, 93, 255, 0.12);
         }
 
         .page-title {
             font-weight: 700;
             letter-spacing: -0.02em;
+            font-size: 22px;
+            margin-bottom: 4px;
         }
 
         .page-subtitle {
@@ -344,8 +408,8 @@ $cards = [
             padding: 14px 16px;
             margin-bottom: 18px;
             min-height: 90px;
-            box-shadow: 0 14px 40px rgba(15,23,42,0.18);
-            border: 1px solid rgba(15,23,42,0.85);
+            box-shadow: var(--shadow-soft);
+            border: none;
             position: relative;
             overflow: hidden;
             display: flex;
@@ -370,7 +434,7 @@ $cards = [
             width: 40px;
             height: 40px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.16);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -379,7 +443,7 @@ $cards = [
             font-size: 18px;
         }
         .doc-card .card-value {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 900;
             margin: 0;
             line-height: 1.1;
@@ -398,7 +462,7 @@ $cards = [
             display: block;
             margin-top: 4px;
             font-size: 12px;
-            opacity: 1;
+            opacity: 0.95;
             color: #FFFFFF;
             font-weight: 600;
         }
@@ -428,8 +492,8 @@ $cards = [
         .document-filters {
             border-radius: var(--card-radius);
             border: 1px solid var(--border-subtle);
-            box-shadow: 0 12px 28px rgba(15,23,42,0.12);
-            background: #FFFFFF;
+            box-shadow: var(--shadow-soft);
+            background: linear-gradient(135deg, #FFFFFF 0, #F9FAFF 45%, #F3F4FF 100%);
         }
         .filter-card .form-control,
         .filter-card .form-select {
@@ -451,11 +515,11 @@ $cards = [
 
         .table-documentos {
             width: 100%;
-            border-radius: 14px;
+            border-radius: 18px;
             overflow: hidden;
         }
         .table-documentos thead th {
-            background: #F9FAFB;
+            background: #F3F4FF;
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -463,7 +527,7 @@ $cards = [
             color: #6B7280;
         }
         .table-documentos tbody tr:hover {
-            background: #F3F4FF;
+            background: #EEF2FF;
         }
         .table-documentos tbody td {
             vertical-align: middle;
@@ -478,6 +542,7 @@ $cards = [
             font-size: 11px;
             padding: 5px 10px;
             border-radius: 999px;
+            font-weight: 600;
         }
         .table-actions .btn {
             margin-right: 4px;
@@ -541,14 +606,22 @@ $cards = [
         </div>
         <div class="page-wrapper">
             <div class="content">
-                <div class="row m-b-20">
-                    <div class="col-sm-8 col-12">
+                <div class="top-header-bar">
+                    <div>
                         <h4 class="page-title">Explorador de Documentos</h4>
                         <p class="page-subtitle">Visão consolidada de faturas, vendas, cotações, notas e recibos emitidos na recepção.</p>
                     </div>
-                    <div class="col-sm-4 col-12 text-right">
-                        <a href="fa_recepcao.php" target="_blank" class="btn btn-primary btn-rounded m-r-5"><i class="fa fa-plus"></i> Nova Fatura</a>
-                        <a href="ct_recepcao.php" target="_blank" class="btn btn-outline-primary btn-rounded m-r-5"><i class="fa fa-file-text-o"></i> Nova Cotação</a>
+                    <div class="top-header-bar-right">
+                        <div class="search-pill d-none d-md-block">
+                            <i class="fa fa-search"></i>
+                            <input type="text" id="filterSearch" placeholder="Pesquisar documento, paciente ou empresa..." class="form-control">
+                        </div>
+                        <a href="fa_recepcao.php" target="_blank" class="btn btn-primary btn-rounded m-r-5">
+                            <i class="fa fa-plus"></i> Nova Fatura
+                        </a>
+                        <a href="ct_recepcao.php" target="_blank" class="btn btn-outline-primary btn-rounded m-r-5">
+                            <i class="fa fa-file-text-o"></i> Nova Cotação
+                        </a>
                     </div>
                 </div>
 
@@ -596,10 +669,6 @@ $cards = [
                 <div class="card filter-card document-filters m-b-30">
                     <div class="card-body">
                         <div class="row align-items-end">
-                            <div class="col-md-4 col-sm-12 m-b-15">
-                                <label class="filter-label" for="filterSearch">Pesquisa rápida</label>
-                                <input type="text" id="filterSearch" class="form-control" placeholder="Paciente, Nº documento, empresa...">
-                            </div>
                             <div class="col-md-3 col-sm-6 m-b-15">
                                 <label class="filter-label" for="filterDateFrom">Data inicial</label>
                                 <input type="date" id="filterDateFrom" class="form-control">
@@ -608,7 +677,7 @@ $cards = [
                                 <label class="filter-label" for="filterDateTo">Data final</label>
                                 <input type="date" id="filterDateTo" class="form-control">
                             </div>
-                            <div class="col-md-2 col-sm-12 m-b-15 filter-actions">
+                            <div class="col-md-3 col-sm-12 m-b-15 filter-actions">
                                 <button class="btn btn-light btn-block" id="filterReset"><i class="fa fa-undo"></i> Limpar</button>
                             </div>
                         </div>
