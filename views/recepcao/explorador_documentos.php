@@ -730,11 +730,12 @@ $cards = [
                                                             'Estado' => $fatura['detalhes']['status'] ?? 'Pendente',
                                                             'Data' => $fatura['dataa'] ?? '-'
                                                         ];
+                                                        $detalhes_json = htmlspecialchars(
+                                                            json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
                                                     ?>
-                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
-                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
-                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
-                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
                                                         <td>
@@ -805,6 +806,11 @@ $cards = [
                                                             'Método' => strtoupper($venda['metodo'] ?? '-'),
                                                             'Data' => $venda['dataa'] ?? '-'
                                                         ];
+                                                        $detalhes_json = htmlspecialchars(
+                                                            json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
                                                     ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
@@ -876,6 +882,11 @@ $cards = [
                                                             'Prazo' => $cotacao['prazo'] ? date('d/m/Y', strtotime($cotacao['prazo'])) : '-',
                                                             'Data' => $cotacao['dataa'] ?? '-'
                                                         ];
+                                                        $detalhes_json = htmlspecialchars(
+                                                            json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
                                                     ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
@@ -948,10 +959,12 @@ $cards = [
                                                             'Motivo' => $nota['motivo'] ?? '-',
                                                             'Data' => $nota['dataa'] ?? '-'
                                                         ];
+                                                        $detalhes_json = htmlspecialchars(
+                                                            json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
                                                     ?>
-                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
-                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
-                                                    <?php $detalhes_json = htmlspecialchars(json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
                                                         <td><?php echo $faturaOrigem; ?></td>
@@ -1023,6 +1036,11 @@ $cards = [
                                                             'Motivo' => $nota['motivo'] ?? '-',
                                                             'Data' => $nota['dataa'] ?? '-'
                                                         ];
+                                                        $detalhes_json = htmlspecialchars(
+                                                            json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
                                                     ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
@@ -1096,6 +1114,11 @@ $cards = [
                                                             'Motivo' => $dv['motivo'] ?? '-',
                                                             'Data' => $dv['dataa'] ?? '-'
                                                         ];
+                                                        $detalhes_json = htmlspecialchars(
+                                                            json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
                                                     ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
@@ -1167,6 +1190,11 @@ $cards = [
                                                             'Método' => strtoupper($rc['metodo'] ?? '-'),
                                                             'Data' => $rc['dataa'] ?? '-'
                                                         ];
+                                                        $detalhes_json = htmlspecialchars(
+                                                            json_encode($detalhes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
                                                     ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
