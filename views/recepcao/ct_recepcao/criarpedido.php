@@ -51,7 +51,7 @@ $year = date('Y');
 $data_hora = date("Y-m-d H:i:s");
 $data = date("Y-m-d");
 
-if ($year == $serie) {
+$serie = intval($serie);
     // Buscar próximo número de documento
     $sql_max = "SELECT MAX(n_doc) as maxid FROM cotacao_recepcao WHERE serie = ?";
     $stmt_max = mysqli_prepare($db, $sql_max);
@@ -75,6 +75,37 @@ if ($year == $serie) {
     }
     
     // Inserir cotação
+<<<<<<< HEAD
+    $sql_ct = "INSERT INTO cotacao_recepcao SET 
+        n_doc = ?, 
+        paciente = ?, 
+        empresa_id = ?, 
+        valor = ?, 
+        prazo = ?,
+        serie = ?, 
+        usuario = ?, 
+        dataa = ?";
+    
+    $stmt_ct = mysqli_prepare($db, $sql_ct);
+    $empresa_id_db = $empresa_id ? intval($empresa_id) : 0;
+    $new_id = intval($new_id);
+    $serie = intval($serie);
+    $paciente_id = intval($paciente_id);
+    $userID = intval($userID);
+    $total = floatval($total);
+    $prazo_db = $prazo ? $prazo : null;
+    
+    mysqli_stmt_bind_param($stmt_ct, "iiidsiis", 
+        $new_id,
+        $paciente_id,
+        $empresa_id_db,
+        $total,
+        $prazo_db,
+        $serie,
+        $userID,
+        $data
+    );
+=======
     // Verificar se a coluna "prazo" existe (para compatibilidade com bases antigas)
     $hasPrazo = false;
     $rs_col_prazo = mysqli_query($db, "SHOW COLUMNS FROM cotacao_recepcao LIKE 'prazo'");
@@ -134,6 +165,7 @@ if ($year == $serie) {
             $data
         );
     }
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
     
     if(mysqli_stmt_execute($stmt_ct)) {
         $ct_id = mysqli_insert_id($db);
@@ -203,8 +235,6 @@ if ($year == $serie) {
     } else {
         echo 2;
     }
-} else {
-    echo 3;
-}
+
 ?>
 

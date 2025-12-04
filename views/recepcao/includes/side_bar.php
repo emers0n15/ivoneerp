@@ -24,6 +24,9 @@
                                 <li><a href="nova_empresa.php">Nova Empresa</a></li>
                             </ul>
                         </li>
+                        <li>
+                            <a href="servicos_clinica.php"><i class="fa fa-stethoscope"></i> <span>Serviços/Procedimentos</span></a>
+                        </li>
                         <li class="submenu">
                             <a href="#"><i class="fa fa-file"></i> <span> Documentos </span> <span class="menu-arrow"></span></a>
                             <ul style="display: none;">

@@ -251,7 +251,7 @@ $_SESSION['categoriaUsuario'] = $_SESSION['categoriaUsuario'];
                                             }
                                             
                                             if(!$has_faturas) {
-                                                echo '<tr><td colspan="6" class="text-center">Nenhuma fatura encontrada</td></tr>';
+                                                echo '<tr style="display:none"><td colspan="7"></td></tr>';
                                             }
                                             ?>
                                         </tbody>
@@ -272,13 +272,21 @@ $_SESSION['categoriaUsuario'] = $_SESSION['categoriaUsuario'];
     <script type="text/javascript" src="../js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#tabelaFaturas').DataTable({
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Portuguese.json",
-                    "emptyTable": "Nenhuma fatura encontrada"
+            var savedLen = parseInt(localStorage.getItem('faturas_page_len')) || 10;
+            var dt = $('#tabelaFaturas').DataTable({
+                pageLength: savedLen,
+                lengthMenu: [[10, 20, 30], [10, 20, 30]],
+                pagingType: 'simple',
+                stateSave: true,
+                responsive: true,
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json",
+                    paginate: { previous: "Anterior", next: "Próximo" },
+                    emptyTable: "Nenhuma fatura encontrada"
                 },
-                "order": [[2, "desc"]]
+                order: [[2, "desc"]]
             });
+            $('#tabelaFaturas').on('length.dt', function(e, settings, len){ localStorage.setItem('faturas_page_len', len); });
         });
     </script>
 </body>

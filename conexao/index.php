@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+<?php $db = mysqli_connect('localhost','root','','ivoneerp') or die("<h3 style='text-align:center;margin-top: 50px;'>Nao e possível se conectar ao banco de dados</h3>"); ?>
+=======
 <?php
 // config/conexao.php
 
@@ -25,3 +28,4 @@ if (!$db) {
 // Definir charset para evitar problemas com acentuação
 mysqli_set_charset($db, "utf8mb4");
 ?>
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b

@@ -403,14 +403,26 @@
                 alert("QR Code não disponível para serviços");
             });
             
+
+
             // Função para lidar com clique na linha da tabela (igual ao VDS)
             function handleClick() {
-                var idServico = this.getAttribute('data-idservico');
+                var idServico = $(this).data('idservico');
+                if(!idServico){
+                    idServico = $(this).find('td:first').text().trim();
+                }
                 if(!idServico) {
-                    console.log('ID do serviço não encontrado');
+                    console.log('ID do serviço não encontrado no clique da cotação');
+                    alert('Erro: não foi possível identificar o serviço selecionado.');
                     return;
                 }
+<<<<<<< HEAD
+
+                console.log('Serviço clicado (CT):', idServico, 'Empresa:', empresaSelecionada);
+                
+=======
                 console.log('Serviço clicado:', idServico, 'Empresa:', empresaSelecionada);
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 $.ajax({
                     type: "POST",
                     url: "ct_recepcao/addservtemp.php",
@@ -419,7 +431,7 @@
                         empresa_id: empresaSelecionada
                     },
                     success: function(response){
-                        console.log('Resposta do servidor:', response);
+                        console.log('Resposta do servidor (CT):', response);
                         if(response == 1){
                             alert("Erro ao adicionar serviço!");
                         } else if(response == 2){
@@ -438,25 +450,25 @@
                             alert("Serviço não disponível.");
                         } else if(response == 4){
                             alert("Erro: As tabelas necessárias não foram criadas. Execute o SQL de criação.");
+<<<<<<< HEAD
+                        } else {
+                            console.log('Resposta inesperada (CT):', response);
+=======
                         } else if(response != 3){
                             console.log('Resposta inesperada:', response);
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                             alert("Resposta inesperada do servidor: " + response);
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('Erro AJAX:', status, error, xhr.responseText);
+                        console.error('Erro AJAX (CT):', status, error, xhr.responseText);
                         alert("Erro ao comunicar com o servidor: " + error);
                     }
                 });
             }
             
-            // Anexar evento de clique ANTES de inicializar o DataTable (igual ao VDS)
-            $("#example tbody tr").click(handleClick);
-            
-            // Também usar delegação de eventos como fallback (funciona mesmo quando DataTable redesenha)
-            $(document).on('click', '#example tbody tr', function() {
-                handleClick.call(this);
-            });
+            // Usar apenas delegação de eventos (funciona mesmo quando DataTable redesenha)
+            $(document).on('click', '#example tbody tr', handleClick);
             
             $(".btn_criar").click(function(){
                 criarpedido();
@@ -510,7 +522,6 @@
                                 alert("Ocorreu um erro com a requisição ajax");
                             }
                         }); 
-                    }
                 }
             }
         
@@ -601,11 +612,26 @@
                 }
             }
             
-            // Inicializar DataTable (o evento já foi anexado acima)
-            $('#example').DataTable();
+            var savedLen = parseInt(localStorage.getItem('procedimentos_ct_len')) || 10;
+            $('#example').DataTable({
+                pageLength: savedLen,
+                lengthMenu: [[10, 20, 30], [10, 20, 30]],
+                pagingType: 'simple',
+                stateSave: true,
+                responsive: true,
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json",
+                    paginate: { previous: "Anterior", next: "Próximo" }
+                }
+            });
+            $('#example').on('length.dt', function(e, settings, len){ localStorage.setItem('procedimentos_ct_len', len); });
         });
     </script>
     </body>
+<<<<<<< HEAD
+</html>
+=======
     </html>
     
     
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b

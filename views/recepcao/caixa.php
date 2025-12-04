@@ -165,10 +165,9 @@ if($use_new_table) {
 				$total_pago = floatval($pag_data['total']);
 			}
 			
-			// Totais de NC, ND, DV
+			// Totais de NC, ND (DV não entra mais no cálculo de faturas)
 			$total_nc = 0;
 			$total_nd = 0;
-			$total_dv = 0;
 			
 			$check_nc = "SHOW TABLES LIKE 'nota_credito_recepcao'";
 			$table_nc = mysqli_query($db, $check_nc);
@@ -192,24 +191,13 @@ if($use_new_table) {
 				}
 			}
 			
-			$check_dv = "SHOW TABLES LIKE 'devolucao_recepcao'";
-			$table_dv = mysqli_query($db, $check_dv);
-			if($table_dv && mysqli_num_rows($table_dv) > 0) {
-				$sql_dv = "SELECT COALESCE(SUM(valor), 0) as total FROM devolucao_recepcao WHERE factura_recepcao_id = $fatura_id";
-				$rs_dv = mysqli_query($db, $sql_dv);
-				if($rs_dv) {
-					$dv_data = mysqli_fetch_array($rs_dv);
-					$total_dv = floatval($dv_data['total']);
-				}
-			}
+			// DV agora atua sobre VDS, não deve mais impactar o status das faturas
+			$total_dv = 0;
 			
-			$valor_disponivel = $valor_total + $total_nd - $total_nc - $total_dv;
+			$valor_disponivel = $valor_total + $total_nd - $total_nc;
 			
-			// Determinar status
-			if($total_dv > 0 && $total_dv >= $valor_total) {
-				$status_faturas_gerais['devolvida']['quantidade']++;
-				$status_faturas_gerais['devolvida']['valor'] += $valor_total;
-			} elseif($total_pago >= $valor_disponivel) {
+			// Determinar status (sem considerar DV para faturas)
+			if($total_pago >= $valor_disponivel && $valor_disponivel > 0) {
 				$status_faturas_gerais['paga']['quantidade']++;
 				$status_faturas_gerais['paga']['valor'] += $valor_total;
 			} elseif($total_pago > 0) {
@@ -273,10 +261,9 @@ if($use_new_table) {
 				$total_pago = floatval($pag_data['total']);
 			}
 			
-			// Totais de NC, ND, DV
+			// Totais de NC, ND (DV não entra mais no cálculo de faturas)
 			$total_nc = 0;
 			$total_nd = 0;
-			$total_dv = 0;
 			
 			$check_nc = "SHOW TABLES LIKE 'nota_credito_recepcao'";
 			$table_nc = mysqli_query($db, $check_nc);
@@ -300,22 +287,11 @@ if($use_new_table) {
 				}
 			}
 			
-			$check_dv = "SHOW TABLES LIKE 'devolucao_recepcao'";
-			$table_dv = mysqli_query($db, $check_dv);
-			if($table_dv && mysqli_num_rows($table_dv) > 0) {
-				$sql_dv = "SELECT COALESCE(SUM(valor), 0) as total FROM devolucao_recepcao WHERE factura_recepcao_id = $fatura_id";
-				$rs_dv = mysqli_query($db, $sql_dv);
-				if($rs_dv) {
-					$dv_data = mysqli_fetch_array($rs_dv);
-					$total_dv = floatval($dv_data['total']);
-				}
-			}
 			
-			$valor_disponivel = $valor_total + $total_nd - $total_nc - $total_dv;
+			// DV agora atua sobre VDS e não deve impactar o cálculo de faturas
+			$valor_disponivel = $valor_total + $total_nd - $total_nc;
 			
-			if($total_dv > 0 && $total_dv >= $valor_total) {
-				$totais['total_devolvido'] += $valor_total;
-			} elseif($total_pago >= $valor_disponivel) {
+			if($total_pago >= $valor_disponivel && $valor_disponivel > 0) {
 				$totais['total_recebido'] += $valor_total;
 			} else {
 				$totais['total_pendente'] += $valor_disponivel - $total_pago;
@@ -433,24 +409,12 @@ if($use_new_table) {
 				}
 			}
 			
-			$check_dv = "SHOW TABLES LIKE 'devolucao_recepcao'";
-			$table_dv = mysqli_query($db, $check_dv);
-			if($table_dv && mysqli_num_rows($table_dv) > 0) {
-				$sql_dv = "SELECT COALESCE(SUM(valor), 0) as total FROM devolucao_recepcao WHERE factura_recepcao_id = $fatura_id";
-				$rs_dv = mysqli_query($db, $sql_dv);
-				if($rs_dv) {
-					$dv_data = mysqli_fetch_array($rs_dv);
-					$total_dv = floatval($dv_data['total']);
-				}
-			}
 			
-			$valor_disponivel = $valor_total + $total_nd - $total_nc - $total_dv;
+			// DV agora atua sobre VDS e não deve impactar o cálculo de faturas
+			$valor_disponivel = $valor_total + $total_nd - $total_nc;
 			
-			// Determinar status
-			if($total_dv > 0 && $total_dv >= $valor_total) {
-				$status_faturas['devolvida']['quantidade']++;
-				$status_faturas['devolvida']['valor'] += $valor_total;
-			} elseif($total_pago >= $valor_disponivel) {
+			// Determinar status (ignorando DV para faturas)
+			if($total_pago >= $valor_disponivel && $valor_disponivel > 0) {
 				$status_faturas['paga']['quantidade']++;
 				$status_faturas['paga']['valor'] += $valor_total;
 			} elseif($total_pago > 0) {
@@ -572,15 +536,15 @@ $_SESSION['categoriaUsuario'] = $_SESSION['categoriaUsuario'];
                         <div class="card">
                             <div class="card-body text-center">
                                 <?php 
-                                // Calcular saídas (devoluções) do dia
+                                // Calcular saídas (devoluções em dinheiro) do dia
                                 $total_saidas_hoje = 0;
                                 $check_dv = "SHOW TABLES LIKE 'devolucao_recepcao'";
                                 $table_dv = mysqli_query($db, $check_dv);
                                 if($table_dv && mysqli_num_rows($table_dv) > 0) {
                                     $sql_saidas = "SELECT COALESCE(SUM(valor), 0) as total 
                                                    FROM devolucao_recepcao 
-                                                   WHERE DATE(data) = '$data_hoje' 
-                                                   AND metodo_reembolso = 'dinheiro'";
+                                                   WHERE DATE(dataa) = '$data_hoje' 
+                                                   AND metodo = 'dinheiro'";
                                     $rs_saidas = mysqli_query($db, $sql_saidas);
                                     if($rs_saidas) {
                                         $saidas_data = mysqli_fetch_array($rs_saidas);

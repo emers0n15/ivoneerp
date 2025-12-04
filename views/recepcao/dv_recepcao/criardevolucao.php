@@ -4,14 +4,15 @@ include_once '../../../conexao/index.php';
 error_reporting(E_ALL);
 date_default_timezone_set('Africa/Maputo');
 
+// IMPORTANTE: aqui o parâmetro fatura_id passou a representar o ID da VDS (venda_dinheiro_servico)
 $userID = $_SESSION['idUsuario'] ?? null;
-$fatura_id = isset($_POST['fatura_id']) && $_POST['fatura_id'] != '' && $_POST['fatura_id'] != 'null' ? intval($_POST['fatura_id']) : null;
+$vds_id = isset($_POST['fatura_id']) && $_POST['fatura_id'] != '' && $_POST['fatura_id'] != 'null' ? intval($_POST['fatura_id']) : null;
 $empresa_id = isset($_POST['empresa_id']) && $_POST['empresa_id'] != '' && $_POST['empresa_id'] != 'null' ? intval($_POST['empresa_id']) : null;
 $motivo = isset($_POST['motivo']) ? trim($_POST['motivo']) : '';
 $metodo = isset($_POST['metodo']) ? trim($_POST['metodo']) : '';
 
-if(!$fatura_id || $fatura_id <= 0) {
-    error_log("DV: fatura_id inválido - " . ($_POST['fatura_id'] ?? 'não definido'));
+if(!$vds_id || $vds_id <= 0) {
+    error_log("DV: vds_id inválido - " . ($_POST['fatura_id'] ?? 'não definido'));
     echo 1;
     exit;
 }
@@ -35,8 +36,9 @@ if(!$metodo || $metodo == '') {
 }
 
 // Verificar se todas as tabelas necessárias existem
+// AGORA DV TRABALHA SOBRE VDS (venda_dinheiro_servico)
 $tabelas_necessarias = [
-    'factura_recepcao',
+    'venda_dinheiro_servico',
     'devolucao_recepcao',
     'dv_servicos_temp',
     'dv_servicos_fact'
@@ -59,30 +61,31 @@ if(!empty($tabelas_faltando)) {
     exit;
 }
 
-$sql_fatura = "SELECT * FROM factura_recepcao WHERE id = ?";
-$stmt_fatura = mysqli_prepare($db, $sql_fatura);
-mysqli_stmt_bind_param($stmt_fatura, "i", $fatura_id);
-mysqli_stmt_execute($stmt_fatura);
-$rs_fatura = mysqli_stmt_get_result($stmt_fatura);
+// Buscar informações da VDS
+$sql_vds = "SELECT * FROM venda_dinheiro_servico WHERE id = ?";
+$stmt_vds = mysqli_prepare($db, $sql_vds);
+mysqli_stmt_bind_param($stmt_vds, "i", $vds_id);
+mysqli_stmt_execute($stmt_vds);
+$rs_vds = mysqli_stmt_get_result($stmt_vds);
 
-if(!$rs_fatura || mysqli_num_rows($rs_fatura) == 0) {
+if(!$rs_vds || mysqli_num_rows($rs_vds) == 0) {
     echo 1;
     exit;
 }
 
-$fatura_data = mysqli_fetch_array($rs_fatura);
-$paciente_id = intval($fatura_data['paciente']);
-$empresa_id_db = $empresa_id ? intval($empresa_id) : (isset($fatura_data['empresa_id']) ? intval($fatura_data['empresa_id']) : null);
+$vds_data = mysqli_fetch_array($rs_vds);
+$paciente_id = intval($vds_data['paciente']);
+$empresa_id_db = $empresa_id ? intval($empresa_id) : (isset($vds_data['empresa_id']) ? intval($vds_data['empresa_id']) : null);
 
-// Buscar serviços da tabela temporária
+// Buscar serviços da tabela temporária (ligados a esta VDS)
 if($empresa_id_db && $empresa_id_db > 0) {
     $sql_temp = "SELECT * FROM dv_servicos_temp WHERE user = ? AND empresa_id = ? AND factura_recepcao_id = ?";
     $stmt = mysqli_prepare($db, $sql_temp);
-    mysqli_stmt_bind_param($stmt, "iii", $userID, $empresa_id_db, $fatura_id);
+    mysqli_stmt_bind_param($stmt, "iii", $userID, $empresa_id_db, $vds_id);
 } else {
     $sql_temp = "SELECT * FROM dv_servicos_temp WHERE user = ? AND (empresa_id IS NULL OR empresa_id = 0) AND factura_recepcao_id = ?";
     $stmt = mysqli_prepare($db, $sql_temp);
-    mysqli_stmt_bind_param($stmt, "ii", $userID, $fatura_id);
+    mysqli_stmt_bind_param($stmt, "ii", $userID, $vds_id);
 }
 mysqli_stmt_execute($stmt);
 $rs_temp = mysqli_stmt_get_result($stmt);
@@ -103,59 +106,8 @@ if($total <= 0) {
     exit;
 }
 
-// Calcular valor disponível da fatura (considerando pagamentos, NC, ND e outras devoluções)
-$valor_fatura_original = floatval($fatura_data['valor']);
-
-// Total pago
-$sql_total_pago = "SELECT COALESCE(SUM(valor_pago), 0) as total_pago 
-                   FROM pagamentos_recepcao 
-                   WHERE factura_recepcao_id = ? 
-                   OR (fatura_id = ? AND factura_recepcao_id IS NULL)";
-$stmt_pago = mysqli_prepare($db, $sql_total_pago);
-mysqli_stmt_bind_param($stmt_pago, "ii", $fatura_id, $fatura_id);
-mysqli_stmt_execute($stmt_pago);
-$rs_pago = mysqli_stmt_get_result($stmt_pago);
-$total_pago = 0;
-if($rs_pago && mysqli_num_rows($rs_pago) > 0) {
-    $pago_data = mysqli_fetch_array($rs_pago);
-    $total_pago = floatval($pago_data['total_pago']);
-}
-
-// Total de notas de crédito (diminuem o valor)
-$check_table_nc = "SHOW TABLES LIKE 'nota_credito_recepcao'";
-$table_nc_exists = mysqli_query($db, $check_table_nc);
-$total_nc = 0;
-if($table_nc_exists && mysqli_num_rows($table_nc_exists) > 0) {
-    $sql_total_nc = "SELECT COALESCE(SUM(valor), 0) as total_nc 
-                     FROM nota_credito_recepcao 
-                     WHERE factura_recepcao_id = ?";
-    $stmt_nc = mysqli_prepare($db, $sql_total_nc);
-    mysqli_stmt_bind_param($stmt_nc, "i", $fatura_id);
-    mysqli_stmt_execute($stmt_nc);
-    $rs_nc = mysqli_stmt_get_result($stmt_nc);
-    if($rs_nc && mysqli_num_rows($rs_nc) > 0) {
-        $nc_data = mysqli_fetch_array($rs_nc);
-        $total_nc = floatval($nc_data['total_nc']);
-    }
-}
-
-// Total de notas de débito (aumentam o valor)
-$check_table_nd = "SHOW TABLES LIKE 'nota_debito_recepcao'";
-$table_nd_exists = mysqli_query($db, $check_table_nd);
-$total_nd = 0;
-if($table_nd_exists && mysqli_num_rows($table_nd_exists) > 0) {
-    $sql_total_nd = "SELECT COALESCE(SUM(valor), 0) as total_nd 
-                     FROM nota_debito_recepcao 
-                     WHERE factura_recepcao_id = ?";
-    $stmt_nd = mysqli_prepare($db, $sql_total_nd);
-    mysqli_stmt_bind_param($stmt_nd, "i", $fatura_id);
-    mysqli_stmt_execute($stmt_nd);
-    $rs_nd = mysqli_stmt_get_result($stmt_nd);
-    if($rs_nd && mysqli_num_rows($rs_nd) > 0) {
-        $nd_data = mysqli_fetch_array($rs_nd);
-        $total_nd = floatval($nd_data['total_nd']);
-    }
-}
+// Para VDS, o valor disponível é o valor original da VDS menos devoluções já feitas
+$valor_vds_original = floatval($vds_data['valor']);
 
 // Total de devoluções já feitas (diminuem o valor)
 $check_table_dv = "SHOW TABLES LIKE 'devolucao_recepcao'";
@@ -166,7 +118,7 @@ if($table_dv_exists && mysqli_num_rows($table_dv_exists) > 0) {
                      FROM devolucao_recepcao 
                      WHERE factura_recepcao_id = ?";
     $stmt_dv = mysqli_prepare($db, $sql_total_dv);
-    mysqli_stmt_bind_param($stmt_dv, "i", $fatura_id);
+    mysqli_stmt_bind_param($stmt_dv, "i", $vds_id);
     mysqli_stmt_execute($stmt_dv);
     $rs_dv = mysqli_stmt_get_result($stmt_dv);
     if($rs_dv && mysqli_num_rows($rs_dv) > 0) {
@@ -176,8 +128,8 @@ if($table_dv_exists && mysqli_num_rows($table_dv_exists) > 0) {
 }
 
 // Calcular valor disponível para devolução
-// Valor disponível = Valor original + ND - NC - DV existentes - Total pago
-$valor_disponivel = $valor_fatura_original + $total_nd - $total_nc - $total_dv_existentes - $total_pago;
+// Para VDS: Valor disponível = Valor original da VDS - DV existentes
+$valor_disponivel = $valor_vds_original - $total_dv_existentes;
 
 // Validar que a devolução não exceda o valor disponível
 if($total > $valor_disponivel) {
@@ -232,9 +184,10 @@ $serie = intval($serie);
 $paciente_id = intval($paciente_id);
 $userID = intval($userID);
 $total = floatval($total);
-$fatura_id = intval($fatura_id);
+$vds_id = intval($vds_id);
 
 // Inserir devolução - usar COALESCE para lidar com NULL
+// NOTA: o campo factura_recepcao_id aqui passa a armazenar o ID da VDS (origem da devolução)
 if($empresa_id_db && $empresa_id_db > 0) {
         $sql_dv = "INSERT INTO devolucao_recepcao (n_doc, factura_recepcao_id, paciente, empresa_id, valor, motivo, metodo, serie, usuario, dataa) 
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -246,7 +199,7 @@ if($empresa_id_db && $empresa_id_db > 0) {
         }
         $bind_result = mysqli_stmt_bind_param($stmt_dv, "iiidsssiss", 
             $new_id,
-            $fatura_id,
+            $vds_id,
             $paciente_id,
             $empresa_id_db,
             $total,
@@ -267,7 +220,7 @@ if($empresa_id_db && $empresa_id_db > 0) {
         }
         $bind_result = mysqli_stmt_bind_param($stmt_dv, "iiidsssis", 
             $new_id,
-            $fatura_id,
+            $vds_id,
             $paciente_id,
             $total,
             $motivo,
@@ -350,11 +303,11 @@ if(mysqli_stmt_execute($stmt_dv)) {
         if($empresa_id_db && $empresa_id_db > 0) {
             $sql_delete = "DELETE FROM dv_servicos_temp WHERE user = ? AND empresa_id = ? AND factura_recepcao_id = ?";
             $stmt_delete = mysqli_prepare($db, $sql_delete);
-            mysqli_stmt_bind_param($stmt_delete, "iii", $userID, $empresa_id_db, $fatura_id);
+            mysqli_stmt_bind_param($stmt_delete, "iii", $userID, $empresa_id_db, $vds_id);
         } else {
             $sql_delete = "DELETE FROM dv_servicos_temp WHERE user = ? AND (empresa_id IS NULL OR empresa_id = 0) AND factura_recepcao_id = ?";
             $stmt_delete = mysqli_prepare($db, $sql_delete);
-            mysqli_stmt_bind_param($stmt_delete, "ii", $userID, $fatura_id);
+            mysqli_stmt_bind_param($stmt_delete, "ii", $userID, $vds_id);
         }
         mysqli_stmt_execute($stmt_delete);
         

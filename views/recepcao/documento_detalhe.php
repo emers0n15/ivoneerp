@@ -1,4 +1,8 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 session_start();
 if(!isset($_SESSION['idUsuario'])){
     header("location:../../");
@@ -12,12 +16,17 @@ if($_SESSION['categoriaUsuario'] != "recepcao"){
 
 include '../../conexao/index.php';
 
+// Verificar se a conexão foi estabelecida
+if(!isset($db) || !$db){
+    die('Erro ao conectar à base de dados.');
+}
+
 $tipo = isset($_GET['tipo']) ? strtolower(trim($_GET['tipo'])) : '';
 $documento_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $auto_print = isset($_GET['print']);
 
 if(!$tipo || $documento_id <= 0){
-    die('Parâmetros inválidos.');
+    die('Parâmetros inválidos. Tipo: ' . htmlspecialchars($tipo) . ', ID: ' . htmlspecialchars($documento_id));
 }
 
 function formatarMoeda($valor){
@@ -25,22 +34,45 @@ function formatarMoeda($valor){
 }
 
 function formatarData($data){
-    return $data ? date('d/m/Y', strtotime($data)) : '-';
+    if(!$data || $data == '0000-00-00' || $data == '0000-00-00 00:00:00'){
+        return '-';
+    }
+    try {
+        return date('d/m/Y', strtotime($data));
+    } catch(Exception $e){
+        return '-';
+    }
 }
 
 function obterSomatorio($db, $sql, $param){
+    if(!$db || !$sql || !$param){
+        return 0;
+    }
     $stmt = mysqli_prepare($db, $sql);
     if(!$stmt){
+        error_log("Erro ao preparar statement: " . mysqli_error($db));
         return 0;
     }
     mysqli_stmt_bind_param($stmt, "i", $param);
-    mysqli_stmt_execute($stmt);
+    if(!mysqli_stmt_execute($stmt)){
+        error_log("Erro ao executar statement: " . mysqli_error($db));
+        mysqli_stmt_close($stmt);
+        return 0;
+    }
     $rs = mysqli_stmt_get_result($stmt);
     if($rs && mysqli_num_rows($rs) > 0){
         $row = mysqli_fetch_array($rs);
+        mysqli_stmt_close($stmt);
         return floatval($row['total'] ?? 0);
     }
+    mysqli_stmt_close($stmt);
     return 0;
+}
+
+function tabelaExiste($db, $nome_tabela) {
+    $check = "SHOW TABLES LIKE '$nome_tabela'";
+    $result = mysqli_query($db, $check);
+    return ($result && mysqli_num_rows($result) > 0);
 }
 
 $documento = null;
@@ -51,23 +83,47 @@ $titulo = '';
 switch($tipo){
     case 'fa':
         $titulo = 'Fatura de Atendimento';
+        if(!tabelaExiste($db, 'factura_recepcao')){
+            die('Tabela factura_recepcao não existe na base de dados.');
+        }
         $sql = "SELECT f.*, 
                        p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo, p.contacto AS paciente_contacto,
                        e.nome AS empresa_nome, e.nuit AS empresa_nuit, e.contacto AS empresa_contacto, e.email AS empresa_email
                 FROM factura_recepcao f
                 LEFT JOIN pacientes p ON f.paciente = p.id
                 LEFT JOIN empresas_seguros e ON f.empresa_id = e.id
+<<<<<<< HEAD
+                LEFT JOIN users u ON f.usuario = u.id
+=======
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 WHERE f.id = ?";
+        
         $stmt = mysqli_prepare($db, $sql);
+        if(!$stmt){
+            error_log("Erro ao preparar query FA: " . mysqli_error($db));
+            die('Erro ao preparar consulta: ' . htmlspecialchars(mysqli_error($db)));
+        }
         mysqli_stmt_bind_param($stmt, "i", $documento_id);
-        mysqli_stmt_execute($stmt);
+        if(!mysqli_stmt_execute($stmt)){
+            $error = mysqli_error($db);
+            error_log("Erro ao executar query FA: " . $error);
+            mysqli_stmt_close($stmt);
+            die('Erro ao executar consulta: ' . htmlspecialchars($error));
+        }
         $rs = mysqli_stmt_get_result($stmt);
-        $documento = mysqli_fetch_array($rs);
+        if(!$rs){
+            $error = mysqli_error($db);
+            error_log("Erro ao obter resultado FA: " . $error);
+            mysqli_stmt_close($stmt);
+            die('Erro ao obter resultado: ' . htmlspecialchars($error));
+        }
+        $documento = mysqli_fetch_assoc($rs);
+        mysqli_stmt_close($stmt);
         if($documento){
             $documento['numero_formatado'] = "FA#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
             $documento['data_formatada'] = formatarData($documento['dataa']);
-            $documento['subtotal'] = floatval($documento['valor']) + floatval($documento['disconto'] ?? 0);
-            $documento['total'] = floatval($documento['valor']);
+            $documento['subtotal'] = floatval($documento['valor'] ?? 0) + floatval($documento['disconto'] ?? 0);
+            $documento['total'] = floatval($documento['valor'] ?? 0);
             $documento['total_pago'] = obterSomatorio($db, "SELECT COALESCE(SUM(valor_pago),0) as total FROM pagamentos_recepcao WHERE factura_recepcao_id = ?", $documento_id);
             $documento['total_nc'] = obterSomatorio($db, "SELECT COALESCE(SUM(valor),0) as total FROM nota_credito_recepcao WHERE factura_recepcao_id = ?", $documento_id);
             $documento['total_nd'] = obterSomatorio($db, "SELECT COALESCE(SUM(valor),0) as total FROM nota_debito_recepcao WHERE factura_recepcao_id = ?", $documento_id);
@@ -77,11 +133,15 @@ switch($tipo){
                           LEFT JOIN servicos_clinica s ON fs.servico = s.id
                           WHERE fs.factura = ?";
             $stmt_itens = mysqli_prepare($db, $sql_itens);
-            mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
-            mysqli_stmt_execute($stmt_itens);
-            $rs_itens = mysqli_stmt_get_result($stmt_itens);
-            while($row = mysqli_fetch_array($rs_itens)){
-                $itens[] = $row;
+            if($stmt_itens){
+                mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
+                mysqli_stmt_execute($stmt_itens);
+                $rs_itens = mysqli_stmt_get_result($stmt_itens);
+                if($rs_itens){
+                    while($row = mysqli_fetch_array($rs_itens)){
+                        $itens[] = $row;
+                    }
+                }
             }
         }
         break;
@@ -93,25 +153,35 @@ switch($tipo){
                 FROM venda_dinheiro_servico v
                 LEFT JOIN pacientes p ON v.paciente = p.id
                 LEFT JOIN empresas_seguros e ON v.empresa_id = e.id
+<<<<<<< HEAD
+                LEFT JOIN users u ON v.usuario = u.id
+=======
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 WHERE v.id = ?";
         $stmt = mysqli_prepare($db, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $documento_id);
-        mysqli_stmt_execute($stmt);
-        $rs = mysqli_stmt_get_result($stmt);
-        $documento = mysqli_fetch_array($rs);
-        if($documento){
-            $documento['numero_formatado'] = "VDS#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
-            $documento['data_formatada'] = formatarData($documento['dataa']);
-            $sql_itens = "SELECT s.nome AS servico_nome, vf.qtd, vf.preco, vf.total
-                          FROM vds_servicos_fact vf
-                          LEFT JOIN servicos_clinica s ON vf.servico = s.id
-                          WHERE vf.vds_id = ?";
-            $stmt_itens = mysqli_prepare($db, $sql_itens);
-            mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
-            mysqli_stmt_execute($stmt_itens);
-            $rs_itens = mysqli_stmt_get_result($stmt_itens);
-            while($row = mysqli_fetch_array($rs_itens)){
-                $itens[] = $row;
+        if($stmt){
+            mysqli_stmt_bind_param($stmt, "i", $documento_id);
+            mysqli_stmt_execute($stmt);
+            $rs = mysqli_stmt_get_result($stmt);
+            $documento = mysqli_fetch_array($rs);
+            if($documento){
+                $documento['numero_formatado'] = "VDS#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
+                $documento['data_formatada'] = formatarData($documento['dataa']);
+                $sql_itens = "SELECT s.nome AS servico_nome, vf.qtd, vf.preco, vf.total
+                              FROM vds_servicos_fact vf
+                              LEFT JOIN servicos_clinica s ON vf.servico = s.id
+                              WHERE vf.vds_id = ?";
+                $stmt_itens = mysqli_prepare($db, $sql_itens);
+                if($stmt_itens){
+                    mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
+                    mysqli_stmt_execute($stmt_itens);
+                    $rs_itens = mysqli_stmt_get_result($stmt_itens);
+                    if($rs_itens){
+                        while($row = mysqli_fetch_array($rs_itens)){
+                            $itens[] = $row;
+                        }
+                    }
+                }
             }
         }
         break;
@@ -123,26 +193,36 @@ switch($tipo){
                 FROM cotacao_recepcao c
                 LEFT JOIN pacientes p ON c.paciente = p.id
                 LEFT JOIN empresas_seguros e ON c.empresa_id = e.id
+<<<<<<< HEAD
+                LEFT JOIN users u ON c.usuario = u.id
+=======
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 WHERE c.id = ?";
         $stmt = mysqli_prepare($db, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $documento_id);
-        mysqli_stmt_execute($stmt);
-        $rs = mysqli_stmt_get_result($stmt);
-        $documento = mysqli_fetch_array($rs);
-        if($documento){
-            $documento['numero_formatado'] = "CT#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
-            $documento['data_formatada'] = formatarData($documento['dataa']);
-            $documento['prazo_formatado'] = $documento['prazo'] ? formatarData($documento['prazo']) : '-';
-            $sql_itens = "SELECT s.nome AS servico_nome, cf.qtd, cf.preco, cf.total
-                          FROM ct_servicos_fact cf
-                          LEFT JOIN servicos_clinica s ON cf.servico = s.id
-                          WHERE cf.cotacao_id = ?";
-            $stmt_itens = mysqli_prepare($db, $sql_itens);
-            mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
-            mysqli_stmt_execute($stmt_itens);
-            $rs_itens = mysqli_stmt_get_result($stmt_itens);
-            while($row = mysqli_fetch_array($rs_itens)){
-                $itens[] = $row;
+        if($stmt){
+            mysqli_stmt_bind_param($stmt, "i", $documento_id);
+            mysqli_stmt_execute($stmt);
+            $rs = mysqli_stmt_get_result($stmt);
+            $documento = mysqli_fetch_array($rs);
+            if($documento){
+                $documento['numero_formatado'] = "CT#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
+                $documento['data_formatada'] = formatarData($documento['dataa']);
+                $documento['prazo_formatado'] = $documento['prazo'] ? formatarData($documento['prazo']) : '-';
+                $sql_itens = "SELECT s.nome AS servico_nome, cf.qtd, cf.preco, cf.total
+                              FROM ct_servicos_fact cf
+                              LEFT JOIN servicos_clinica s ON cf.servico = s.id
+                              WHERE cf.cotacao_id = ?";
+                $stmt_itens = mysqli_prepare($db, $sql_itens);
+                if($stmt_itens){
+                    mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
+                    mysqli_stmt_execute($stmt_itens);
+                    $rs_itens = mysqli_stmt_get_result($stmt_itens);
+                    if($rs_itens){
+                        while($row = mysqli_fetch_array($rs_itens)){
+                            $itens[] = $row;
+                        }
+                    }
+                }
             }
         }
         break;
@@ -157,26 +237,36 @@ switch($tipo){
                 LEFT JOIN factura_recepcao f ON nc.factura_recepcao_id = f.id
                 LEFT JOIN pacientes p ON nc.paciente = p.id
                 LEFT JOIN empresas_seguros e ON nc.empresa_id = e.id
+<<<<<<< HEAD
+                LEFT JOIN users u ON nc.usuario = u.id
+=======
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 WHERE nc.id = ?";
         $stmt = mysqli_prepare($db, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $documento_id);
-        mysqli_stmt_execute($stmt);
-        $rs = mysqli_stmt_get_result($stmt);
-        $documento = mysqli_fetch_array($rs);
-        if($documento){
-            $documento['numero_formatado'] = "NC#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
-            $documento['data_formatada'] = formatarData($documento['dataa']);
-            $documento['fatura_formatada'] = $documento['fatura_n_doc'] ? "FA#" . $documento['fatura_serie'] . "/" . str_pad($documento['fatura_n_doc'], 6, '0', STR_PAD_LEFT) : '-';
-            $sql_itens = "SELECT s.nome AS servico_nome, nf.qtd, nf.preco, nf.total
-                          FROM nc_servicos_fact nf
-                          LEFT JOIN servicos_clinica s ON nf.servico = s.id
-                          WHERE nf.nota_credito_id = ?";
-            $stmt_itens = mysqli_prepare($db, $sql_itens);
-            mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
-            mysqli_stmt_execute($stmt_itens);
-            $rs_itens = mysqli_stmt_get_result($stmt_itens);
-            while($row = mysqli_fetch_array($rs_itens)){
-                $itens[] = $row;
+        if($stmt){
+            mysqli_stmt_bind_param($stmt, "i", $documento_id);
+            mysqli_stmt_execute($stmt);
+            $rs = mysqli_stmt_get_result($stmt);
+            $documento = mysqli_fetch_array($rs);
+            if($documento){
+                $documento['numero_formatado'] = "NC#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
+                $documento['data_formatada'] = formatarData($documento['dataa']);
+                $documento['fatura_formatada'] = $documento['fatura_n_doc'] ? "FA#" . $documento['fatura_serie'] . "/" . str_pad($documento['fatura_n_doc'], 6, '0', STR_PAD_LEFT) : '-';
+                $sql_itens = "SELECT s.nome AS servico_nome, nf.qtd, nf.preco, nf.total
+                              FROM nc_servicos_fact nf
+                              LEFT JOIN servicos_clinica s ON nf.servico = s.id
+                              WHERE nf.nota_credito_id = ?";
+                $stmt_itens = mysqli_prepare($db, $sql_itens);
+                if($stmt_itens){
+                    mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
+                    mysqli_stmt_execute($stmt_itens);
+                    $rs_itens = mysqli_stmt_get_result($stmt_itens);
+                    if($rs_itens){
+                        while($row = mysqli_fetch_array($rs_itens)){
+                            $itens[] = $row;
+                        }
+                    }
+                }
             }
         }
         break;
@@ -191,26 +281,36 @@ switch($tipo){
                 LEFT JOIN factura_recepcao f ON nd.factura_recepcao_id = f.id
                 LEFT JOIN pacientes p ON nd.paciente = p.id
                 LEFT JOIN empresas_seguros e ON nd.empresa_id = e.id
+<<<<<<< HEAD
+                LEFT JOIN users u ON nd.usuario = u.id
+=======
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 WHERE nd.id = ?";
         $stmt = mysqli_prepare($db, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $documento_id);
-        mysqli_stmt_execute($stmt);
-        $rs = mysqli_stmt_get_result($stmt);
-        $documento = mysqli_fetch_array($rs);
-        if($documento){
-            $documento['numero_formatado'] = "ND#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
-            $documento['data_formatada'] = formatarData($documento['dataa']);
-            $documento['fatura_formatada'] = $documento['fatura_n_doc'] ? "FA#" . $documento['fatura_serie'] . "/" . str_pad($documento['fatura_n_doc'], 6, '0', STR_PAD_LEFT) : '-';
-            $sql_itens = "SELECT s.nome AS servico_nome, df.qtd, df.preco, df.total
-                          FROM nd_servicos_fact df
-                          LEFT JOIN servicos_clinica s ON df.servico = s.id
-                          WHERE df.nota_debito_id = ?";
-            $stmt_itens = mysqli_prepare($db, $sql_itens);
-            mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
-            mysqli_stmt_execute($stmt_itens);
-            $rs_itens = mysqli_stmt_get_result($stmt_itens);
-            while($row = mysqli_fetch_array($rs_itens)){
-                $itens[] = $row;
+        if($stmt){
+            mysqli_stmt_bind_param($stmt, "i", $documento_id);
+            mysqli_stmt_execute($stmt);
+            $rs = mysqli_stmt_get_result($stmt);
+            $documento = mysqli_fetch_array($rs);
+            if($documento){
+                $documento['numero_formatado'] = "ND#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
+                $documento['data_formatada'] = formatarData($documento['dataa']);
+                $documento['fatura_formatada'] = $documento['fatura_n_doc'] ? "FA#" . $documento['fatura_serie'] . "/" . str_pad($documento['fatura_n_doc'], 6, '0', STR_PAD_LEFT) : '-';
+                $sql_itens = "SELECT s.nome AS servico_nome, df.qtd, df.preco, df.total
+                              FROM nd_servicos_fact df
+                              LEFT JOIN servicos_clinica s ON df.servico = s.id
+                              WHERE df.nota_debito_id = ?";
+                $stmt_itens = mysqli_prepare($db, $sql_itens);
+                if($stmt_itens){
+                    mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
+                    mysqli_stmt_execute($stmt_itens);
+                    $rs_itens = mysqli_stmt_get_result($stmt_itens);
+                    if($rs_itens){
+                        while($row = mysqli_fetch_array($rs_itens)){
+                            $itens[] = $row;
+                        }
+                    }
+                }
             }
         }
         break;
@@ -218,34 +318,43 @@ switch($tipo){
     case 'dv':
         $titulo = 'Devolução';
         $sql = "SELECT dv.*, 
-                       f.n_doc AS fatura_n_doc, f.serie AS fatura_serie,
+                       v.n_doc AS vds_n_doc, v.serie AS vds_serie,
                        p.nome AS paciente_nome, p.apelido AS paciente_apelido, p.numero_processo,
                        e.nome AS empresa_nome, e.nuit AS empresa_nuit
                 FROM devolucao_recepcao dv
-                LEFT JOIN factura_recepcao f ON dv.factura_recepcao_id = f.id
+                LEFT JOIN venda_dinheiro_servico v ON dv.factura_recepcao_id = v.id
                 LEFT JOIN pacientes p ON dv.paciente = p.id
                 LEFT JOIN empresas_seguros e ON dv.empresa_id = e.id
+<<<<<<< HEAD
+                LEFT JOIN users u ON dv.usuario = u.id
+=======
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 WHERE dv.id = ?";
         $stmt = mysqli_prepare($db, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $documento_id);
-        mysqli_stmt_execute($stmt);
-        $rs = mysqli_stmt_get_result($stmt);
-        $documento = mysqli_fetch_array($rs);
-        if($documento){
-            $documento['numero_formatado'] = "DV#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
-            $documento['data_formatada'] = formatarData($documento['dataa']);
-            $documento['fatura_formatada'] = $documento['fatura_n_doc'] ? "FA#" . $documento['fatura_serie'] . "/" . str_pad($documento['fatura_n_doc'], 6, '0', STR_PAD_LEFT) : '-';
-            $sql_itens = "SELECT s.nome AS servico_nome, dvf.qtd, dvf.preco, dvf.total
-                          FROM dv_servicos_fact dvf
-                          LEFT JOIN servicos_clinica s ON dvf.servico = s.id
-                          LEFT JOIN devolucao_recepcao dv ON dvf.devolucao_id = dv.id
-                          WHERE dvf.devolucao_id = ?";
-            $stmt_itens = mysqli_prepare($db, $sql_itens);
-            mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
-            mysqli_stmt_execute($stmt_itens);
-            $rs_itens = mysqli_stmt_get_result($stmt_itens);
-            while($row = mysqli_fetch_array($rs_itens)){
-                $itens[] = $row;
+        if($stmt){
+            mysqli_stmt_bind_param($stmt, "i", $documento_id);
+            mysqli_stmt_execute($stmt);
+            $rs = mysqli_stmt_get_result($stmt);
+            $documento = mysqli_fetch_array($rs);
+            if($documento){
+                $documento['numero_formatado'] = "DV#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
+                $documento['data_formatada'] = formatarData($documento['dataa']);
+                $documento['fatura_formatada'] = $documento['vds_n_doc'] ? "VDS#" . $documento['vds_serie'] . "/" . str_pad($documento['vds_n_doc'], 6, '0', STR_PAD_LEFT) : '-';
+                $sql_itens = "SELECT s.nome AS servico_nome, dvf.qtd, dvf.preco, dvf.total
+                              FROM dv_servicos_fact dvf
+                              LEFT JOIN servicos_clinica s ON dvf.servico = s.id
+                              WHERE dvf.devolucao_id = ?";
+                $stmt_itens = mysqli_prepare($db, $sql_itens);
+                if($stmt_itens){
+                    mysqli_stmt_bind_param($stmt_itens, "i", $documento_id);
+                    mysqli_stmt_execute($stmt_itens);
+                    $rs_itens = mysqli_stmt_get_result($stmt_itens);
+                    if($rs_itens){
+                        while($row = mysqli_fetch_array($rs_itens)){
+                            $itens[] = $row;
+                        }
+                    }
+                }
             }
         }
         break;
@@ -258,35 +367,60 @@ switch($tipo){
                 FROM recibo_recepcao rc
                 LEFT JOIN pacientes p ON rc.paciente = p.id
                 LEFT JOIN empresas_seguros e ON rc.empresa_id = e.id
+<<<<<<< HEAD
+                LEFT JOIN users u ON rc.usuario = u.id
+=======
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                 WHERE rc.id = ?";
         $stmt = mysqli_prepare($db, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $documento_id);
-        mysqli_stmt_execute($stmt);
-        $rs = mysqli_stmt_get_result($stmt);
-        $documento = mysqli_fetch_array($rs);
-        if($documento){
-            $documento['numero_formatado'] = "RC#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
-            $documento['data_formatada'] = formatarData($documento['dataa']);
-            $sql_faturas = "SELECT rf.*, f.serie AS fatura_serie, f.n_doc AS fatura_n_doc
-                            FROM recibo_factura_recepcao rf
-                            LEFT JOIN factura_recepcao f ON rf.factura_recepcao_id = f.id
-                            WHERE rf.recibo_id = ?";
-            $stmt_fat = mysqli_prepare($db, $sql_faturas);
-            mysqli_stmt_bind_param($stmt_fat, "i", $documento_id);
-            mysqli_stmt_execute($stmt_fat);
-            $rs_fat = mysqli_stmt_get_result($stmt_fat);
-            while($row = mysqli_fetch_array($rs_fat)){
-                $secundario[] = $row;
+        if($stmt){
+            mysqli_stmt_bind_param($stmt, "i", $documento_id);
+            mysqli_stmt_execute($stmt);
+            $rs = mysqli_stmt_get_result($stmt);
+            $documento = mysqli_fetch_array($rs);
+            if($documento){
+                $documento['numero_formatado'] = "RC#" . $documento['serie'] . "/" . str_pad($documento['n_doc'], 6, '0', STR_PAD_LEFT);
+                $documento['data_formatada'] = formatarData($documento['dataa']);
+                $sql_faturas = "SELECT rf.*, f.serie AS fatura_serie, f.n_doc AS fatura_n_doc
+                                FROM recibo_factura_recepcao rf
+                                LEFT JOIN factura_recepcao f ON rf.factura_recepcao_id = f.id
+                                WHERE rf.recibo_id = ?";
+                $stmt_fat = mysqli_prepare($db, $sql_faturas);
+                if($stmt_fat){
+                    mysqli_stmt_bind_param($stmt_fat, "i", $documento_id);
+                    mysqli_stmt_execute($stmt_fat);
+                    $rs_fat = mysqli_stmt_get_result($stmt_fat);
+                    if($rs_fat){
+                        while($row = mysqli_fetch_array($rs_fat)){
+                            $secundario[] = $row;
+                        }
+                    }
+                }
             }
         }
         break;
 
     default:
-        die('Tipo de documento não suportado.');
+        die('Tipo de documento não suportado: ' . htmlspecialchars($tipo));
 }
 
-if(!$documento){
-    die('Documento não encontrado.');
+if(!$documento || empty($documento['id'])){
+    http_response_code(404);
+    error_log("Documento não encontrado: Tipo=$tipo, ID=$documento_id");
+    
+    // Tentar verificar se o documento existe diretamente
+    $exists = false;
+    if($tipo == 'fa' && tabelaExiste($db, 'factura_recepcao')){
+        $check_sql = "SELECT id FROM factura_recepcao WHERE id = " . intval($documento_id);
+        $check_rs = mysqli_query($db, $check_sql);
+        $exists = ($check_rs && mysqli_num_rows($check_rs) > 0);
+    }
+    
+    if($exists){
+        die('Documento encontrado na base de dados mas houve erro ao carregar os dados. Tipo: ' . htmlspecialchars($tipo) . ', ID: ' . htmlspecialchars($documento_id) . '. Verifique os logs do servidor.');
+    } else {
+        die('Documento não encontrado na base de dados. Tipo: ' . htmlspecialchars($tipo) . ', ID: ' . htmlspecialchars($documento_id));
+    }
 }
 
 ?>
@@ -368,7 +502,7 @@ if(!$documento){
             <?php endif; ?>
             <?php if(!empty($documento['fatura_formatada'])): ?>
                 <div class="info-item">
-                    <div class="info-label">Documento de origem</div>
+                    <div class="info-label"><?php echo ($tipo === 'dv') ? 'VDS de Origem' : (($tipo === 'nc' || $tipo === 'nd') ? 'Fatura de Origem' : 'Documento de origem'); ?></div>
                     <div class="info-value"><?php echo htmlspecialchars($documento['fatura_formatada']); ?></div>
                 </div>
             <?php endif; ?>
@@ -429,7 +563,7 @@ if(!$documento){
             <div class="info-grid">
                 <div class="info-item">
                     <div class="info-label">Subtotal</div>
-                    <div class="info-value"><?php echo formatarMoeda($documento['subtotal']); ?></div>
+                    <div class="info-value"><?php echo formatarMoeda($documento['subtotal'] ?? 0); ?></div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Desconto</div>
@@ -437,19 +571,19 @@ if(!$documento){
                 </div>
                 <div class="info-item">
                     <div class="info-label">Total Pago</div>
-                    <div class="info-value"><?php echo formatarMoeda($documento['total_pago']); ?></div>
+                    <div class="info-value"><?php echo formatarMoeda($documento['total_pago'] ?? 0); ?></div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Notas de Crédito</div>
-                    <div class="info-value text-danger"><?php echo formatarMoeda($documento['total_nc']); ?></div>
+                    <div class="info-value text-danger"><?php echo formatarMoeda($documento['total_nc'] ?? 0); ?></div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Notas de Débito</div>
-                    <div class="info-value text-success"><?php echo formatarMoeda($documento['total_nd']); ?></div>
+                    <div class="info-value text-success"><?php echo formatarMoeda($documento['total_nd'] ?? 0); ?></div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Devoluções</div>
-                    <div class="info-value text-warning"><?php echo formatarMoeda($documento['total_dv']); ?></div>
+                    <div class="info-value text-warning"><?php echo formatarMoeda($documento['total_dv'] ?? 0); ?></div>
                 </div>
             </div>
         </div>
@@ -497,4 +631,3 @@ if(!$documento){
     <?php endif; ?>
 </body>
 </html>
-

@@ -8,13 +8,25 @@
     $_SESSION['idUsuario'] = $_SESSION['idUsuario'];
     $_SESSION['nomeUsuario'] = $_SESSION['nomeUsuario'];
     $_SESSION['categoriaUsuario'] = $_SESSION['categoriaUsuario']; 
+
+    if (!function_exists('tabelaExiste')) {
+        function tabelaExiste(mysqli $con, string $nomeTabela): bool {
+            $nomeTabela = mysqli_real_escape_string($con, $nomeTabela);
+            $resultado = mysqli_query($con, "SHOW TABLES LIKE '$nomeTabela'");
+            return $resultado && mysqli_num_rows($resultado) > 0;
+        }
+    }
     
     $userID = $_SESSION['idUsuario'];
-    // Limpar serviços temporários do usuário ao carregar a página
-    $sql_limpar = "DELETE FROM nc_servicos_temp WHERE user = ?";
-    $stmt_limpar = mysqli_prepare($db, $sql_limpar);
-    mysqli_stmt_bind_param($stmt_limpar, "i", $userID);
-    mysqli_stmt_execute($stmt_limpar);
+    // Limpar serviços temporários do usuário ao carregar a página (apenas se a tabela existir)
+    if (tabelaExiste($db, 'nc_servicos_temp')) {
+        $sql_limpar = "DELETE FROM nc_servicos_temp WHERE user = ?";
+        $stmt_limpar = mysqli_prepare($db, $sql_limpar);
+        if ($stmt_limpar) {
+            mysqli_stmt_bind_param($stmt_limpar, "i", $userID);
+            mysqli_stmt_execute($stmt_limpar);
+        }
+    }
     
     $fatura_selecionada = isset($_GET['fatura']) ? intval($_GET['fatura']) : null;
     $empresa_selecionada = null;
@@ -22,9 +34,7 @@
     
     if($fatura_selecionada) {
         // Buscar informações da fatura selecionada
-        $check_table = "SHOW TABLES LIKE 'factura_recepcao'";
-        $table_exists = mysqli_query($db, $check_table);
-        if($table_exists && mysqli_num_rows($table_exists) > 0) {
+        if (tabelaExiste($db, 'factura_recepcao')) {
             $sql_fatura = "SELECT f.*, p.nome, p.apelido, e.nome as empresa_nome 
                           FROM factura_recepcao f 
                           INNER JOIN pacientes p ON f.paciente = p.id 
@@ -35,6 +45,49 @@
                 $fatura_data = mysqli_fetch_array($rs_fatura);
                 $empresa_selecionada = $fatura_data['empresa_id'] ?? null;
                 $paciente_selecionado = $fatura_data['paciente'] ?? null;
+
+                // Carregar automaticamente os serviços desta fatura para a tabela temporária da NC
+                if (tabelaExiste($db, 'fa_servicos_fact_recepcao') && tabelaExiste($db, 'nc_servicos_temp')) {
+                    $fatura_id_int = intval($fatura_selecionada);
+                    $empresa_id_nc = $empresa_selecionada ? intval($empresa_selecionada) : null;
+
+                    $sql_itens = "SELECT servico, qtd, preco, total 
+                                  FROM fa_servicos_fact_recepcao 
+                                  WHERE factura = ?";
+                    $stmt_itens = mysqli_prepare($db, $sql_itens);
+                    if ($stmt_itens) {
+                        mysqli_stmt_bind_param($stmt_itens, "i", $fatura_id_int);
+                        mysqli_stmt_execute($stmt_itens);
+                        $rs_itens = mysqli_stmt_get_result($stmt_itens);
+
+                        if ($rs_itens && mysqli_num_rows($rs_itens) > 0) {
+                            while ($item = mysqli_fetch_array($rs_itens)) {
+                                $servico_id = intval($item['servico']);
+                                $qtd = intval($item['qtd']);
+                                $preco = floatval($item['preco']);
+                                $total = floatval($item['total']);
+
+                                if ($empresa_id_nc && $empresa_id_nc > 0) {
+                                    $sql_insert = "INSERT INTO nc_servicos_temp(servico, qtd, preco, total, user, empresa_id) 
+                                                   VALUES (?, ?, ?, ?, ?, ?)";
+                                    $stmt_insert = mysqli_prepare($db, $sql_insert);
+                                    if ($stmt_insert) {
+                                        mysqli_stmt_bind_param($stmt_insert, "iiddii", $servico_id, $qtd, $preco, $total, $userID, $empresa_id_nc);
+                                        mysqli_stmt_execute($stmt_insert);
+                                    }
+                                } else {
+                                    $sql_insert = "INSERT INTO nc_servicos_temp(servico, qtd, preco, total, user) 
+                                                   VALUES (?, ?, ?, ?, ?)";
+                                    $stmt_insert = mysqli_prepare($db, $sql_insert);
+                                    if ($stmt_insert) {
+                                        mysqli_stmt_bind_param($stmt_insert, "iiddi", $servico_id, $qtd, $preco, $total, $userID);
+                                        mysqli_stmt_execute($stmt_insert);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

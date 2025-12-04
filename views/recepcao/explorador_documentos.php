@@ -48,6 +48,8 @@ function somarValores($registos, $campo = 'valor') {
     return $total;
 }
 
+// OBS: NC/ND continuam a atuar sobre Faturas.
+// DV agora atua sobre VDS, por isso aqui NÃO vamos mais considerar DV no cálculo de fatura.
 function calcularResumoFatura($db, $fatura_id, $valor_total) {
     $totais = [
         'pago' => 0,
@@ -90,18 +92,11 @@ function calcularResumoFatura($db, $fatura_id, $valor_total) {
         }
     }
 
-    if(tabelaExiste($db, 'devolucao_recepcao')) {
-        $sql = "SELECT COALESCE(SUM(valor), 0) as total 
-                FROM devolucao_recepcao 
-                WHERE factura_recepcao_id = $fatura_id";
-        $rs = mysqli_query($db, $sql);
-        if($rs) {
-            $dados = mysqli_fetch_array($rs);
-            $totais['dv'] = floatval($dados['total'] ?? 0);
-        }
-    }
+    // DV agora é apenas para VDS, não deve mais impactar o cálculo de faturas
+    $totais['dv'] = 0;
 
-    $valor_disponivel = max(0, $valor_total + $totais['nd'] - $totais['nc'] - $totais['dv']);
+    // Valor disponível = total + ND - NC (DV ignorada para faturas)
+    $valor_disponivel = max(0, $valor_total + $totais['nd'] - $totais['nc']);
 
     $status = 'Pendente';
     $classe = 'badge badge-warning';
@@ -219,13 +214,14 @@ if(tabelaExiste($db, 'nota_debito_recepcao')) {
 
 $devolucoes = [];
 if(tabelaExiste($db, 'devolucao_recepcao')) {
+    // DV agora está ligada a VDS (venda_dinheiro_servico)
     $sql = "SELECT dv.*,
-                   f.n_doc AS fatura_n_doc,
-                   f.serie AS fatura_serie,
+                   v.n_doc AS vds_n_doc,
+                   v.serie AS vds_serie,
                    p.nome, p.apelido, p.numero_processo,
                    e.nome AS empresa_nome
             FROM devolucao_recepcao dv
-            LEFT JOIN factura_recepcao f ON dv.factura_recepcao_id = f.id
+            LEFT JOIN venda_dinheiro_servico v ON dv.factura_recepcao_id = v.id
             LEFT JOIN pacientes p ON dv.paciente = p.id
             LEFT JOIN empresas_seguros e ON dv.empresa_id = e.id
             ORDER BY dv.dataa DESC, dv.id DESC";
@@ -472,6 +468,11 @@ $cards = [
             padding-bottom: 8px;
             margin-bottom: 18px;
         }
+        .doc-card .card-label,
+        .doc-card .card-value,
+        .doc-card small,
+        .doc-card .card-icon,
+        .doc-card .card-icon i { color: #fff !important; }
         .nav-pills.document-tabs .nav-link {
             border-radius: 999px;
             margin-right: 8px;
@@ -711,9 +712,7 @@ $cards = [
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php if(empty($faturas)): ?>
-                                                <tr><td colspan="7" class="text-center">Nenhuma fatura encontrada.</td></tr>
-                                            <?php else: ?>
+                                            <?php if(!empty($faturas)): ?>
                                                 <?php foreach($faturas as $fatura): ?>
                                                     <?php
                                                         $numero = formatarNumeroDoc('FA', $fatura['serie'] ?? date('Y'), $fatura['n_doc'] ?? $fatura['id']);
@@ -789,9 +788,7 @@ $cards = [
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php if(empty($vendas)): ?>
-                                                <tr><td colspan="7" class="text-center">Nenhuma venda encontrada.</td></tr>
-                                            <?php else: ?>
+                                            <?php if(!empty($vendas)): ?>
                                                 <?php foreach($vendas as $venda): ?>
                                                     <?php
                                                         $numero = formatarNumeroDoc('VDS', $venda['serie'] ?? date('Y'), $venda['n_doc'] ?? $venda['id']);
@@ -865,9 +862,7 @@ $cards = [
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php if(empty($cotacoes)): ?>
-                                                <tr><td colspan="7" class="text-center">Nenhuma cotação encontrada.</td></tr>
-                                            <?php else: ?>
+                                            <?php if(!empty($cotacoes)): ?>
                                                 <?php foreach($cotacoes as $cotacao): ?>
                                                     <?php
                                                         $numero = formatarNumeroDoc('CT', $cotacao['serie'] ?? date('Y'), $cotacao['n_doc'] ?? $cotacao['id']);
@@ -941,9 +936,7 @@ $cards = [
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php if(empty($notasCredito)): ?>
-                                                <tr><td colspan="7" class="text-center">Nenhuma nota de crédito encontrada.</td></tr>
-                                            <?php else: ?>
+                                            <?php if(!empty($notasCredito)): ?>
                                                 <?php foreach($notasCredito as $nota): ?>
                                                     <?php
                                                         $numero = formatarNumeroDoc('NC', $nota['serie'] ?? date('Y'), $nota['n_doc'] ?? $nota['id']);
@@ -1018,9 +1011,7 @@ $cards = [
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php if(empty($notasDebito)): ?>
-                                                <tr><td colspan="7" class="text-center">Nenhuma nota de débito encontrada.</td></tr>
-                                            <?php else: ?>
+                                            <?php if(!empty($notasDebito)): ?>
                                                 <?php foreach($notasDebito as $nota): ?>
                                                     <?php
                                                         $numero = formatarNumeroDoc('ND', $nota['serie'] ?? date('Y'), $nota['n_doc'] ?? $nota['id']);
@@ -1086,7 +1077,7 @@ $cards = [
                                         <thead>
                                             <tr>
                                                 <th>Nº Documento</th>
-                                                <th>Fatura de Origem</th>
+                                                <th>VDS de Origem</th>
                                                 <th>Paciente</th>
                                                 <th>Valor</th>
                                                 <th>Método</th>
@@ -1095,18 +1086,16 @@ $cards = [
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php if(empty($devolucoes)): ?>
-                                                <tr><td colspan="7" class="text-center">Nenhuma devolução encontrada.</td></tr>
-                                            <?php else: ?>
+                                            <?php if(!empty($devolucoes)): ?>
                                                 <?php foreach($devolucoes as $dv): ?>
                                                     <?php
                                                         $numero = formatarNumeroDoc('DV', $dv['serie'] ?? date('Y'), $dv['n_doc'] ?? $dv['id']);
-                                                        $faturaOrigem = $dv['fatura_n_doc'] ? formatarNumeroDoc('FA', $dv['fatura_serie'] ?? date('Y'), $dv['fatura_n_doc']) : '-';
+                                                        $vdsOrigem = $dv['vds_n_doc'] ? formatarNumeroDoc('VDS', $dv['vds_serie'] ?? date('Y'), $dv['vds_n_doc']) : '-';
                                                         $paciente = trim(($dv['nome'] ?? '') . ' ' . ($dv['apelido'] ?? ''));
                                                         $processo = $dv['numero_processo'] ?? '';
                                                         $detalhes = [
                                                             'Documento' => $numero,
-                                                            'Fatura de Origem' => $faturaOrigem,
+                                                            'VDS de Origem' => $vdsOrigem,
                                                             'Paciente' => $paciente,
                                                             'Nº Processo' => $processo,
                                                             'Valor' => formatarMoeda($dv['valor'] ?? 0),
@@ -1122,7 +1111,7 @@ $cards = [
                                                     ?>
                                                     <tr>
                                                         <td><?php echo $numero; ?></td>
-                                                        <td><?php echo $faturaOrigem; ?></td>
+                                                        <td><?php echo $vdsOrigem; ?></td>
                                                         <td>
                                                             <?php echo $paciente ?: '-'; ?>
                                                             <?php if($processo): ?>
@@ -1173,6 +1162,48 @@ $cards = [
                                             </tr>
                                         </thead>
                                         <tbody>
+<<<<<<< HEAD
+                                            <?php foreach($recibos as $rc): ?>
+                                                <?php
+                                                    $numero = formatarNumeroDoc('RC', $rc['serie'] ?? date('Y'), $rc['n_doc'] ?? $rc['id']);
+                                                    $paciente = trim(($rc['nome'] ?? '') . ' ' . ($rc['apelido'] ?? ''));
+                                                    $processo = $rc['numero_processo'] ?? '';
+                                                    $detalhes = [
+                                                        'Documento' => $numero,
+                                                        'Paciente' => $paciente,
+                                                        'Nº Processo' => $processo,
+                                                        'Empresa' => $rc['empresa_nome'] ?? '-',
+                                                        'Valor' => formatarMoeda($rc['valor'] ?? 0),
+                                                        'Método' => strtoupper($rc['metodo'] ?? '-'),
+                                                        'Data' => $rc['dataa'] ?? '-'
+                                                    ];
+                                                ?>
+                                                <tr>
+                                                    <td><?php echo $numero; ?></td>
+                                                    <td>
+                                                        <?php echo $paciente ?: '-'; ?>
+                                                        <?php if($processo): ?>
+                                                            <br><small><?php echo $processo; ?></small>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td><?php echo $rc['empresa_nome'] ?? '-'; ?></td>
+                                                    <td><?php echo formatarMoeda($rc['valor'] ?? 0); ?></td>
+                                                    <td><?php echo strtoupper($rc['metodo'] ?? '-'); ?></td>
+                                                    <td><?php echo $rc['dataa'] ? date('d/m/Y', strtotime($rc['dataa'])) : '-'; ?></td>
+                                                    <td class="table-actions">
+                                                        <button class="btn btn-sm btn-outline-primary btn-detalhes" data-documento="<?php echo $detalhes_json; ?>">
+                                                            <i class="fa fa-info-circle"></i> Detalhes
+                                                        </button>
+                                                        <a href="documento_detalhe.php?tipo=rc&id=<?php echo $rc['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                            <i class="fa fa-eye"></i> Visualizar
+                                                        </a>
+                                                        <a href="documento_detalhe.php?tipo=rc&id=<?php echo $rc['id']; ?>&print=1" target="_blank" class="btn btn-sm btn-outline-dark">
+                                                            <i class="fa fa-print"></i> Imprimir
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+=======
                                             <?php if(empty($recibos)): ?>
                                                 <tr><td colspan="7" class="text-center">Nenhum recibo encontrado.</td></tr>
                                             <?php else: ?>
@@ -1222,6 +1253,7 @@ $cards = [
                                                     </tr>
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
+>>>>>>> 25a0cb3ed134b3fba392f117e5fda8254256a55b
                                         </tbody>
                                     </table>
                                 </div>
@@ -1394,4 +1426,3 @@ $cards = [
     </script>
 </body>
 </html>
-

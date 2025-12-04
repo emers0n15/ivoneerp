@@ -600,7 +600,19 @@
                 }
             }
             
-            $('#example').DataTable();
+            var savedLen = parseInt(localStorage.getItem('procedimentos_fa_len')) || 10;
+            $('#example').DataTable({
+                pageLength: savedLen,
+                lengthMenu: [[10, 20, 30], [10, 20, 30]],
+                pagingType: 'simple',
+                stateSave: true,
+                responsive: true,
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json",
+                    paginate: { previous: "Anterior", next: "Próximo" }
+                }
+            });
+            $('#example').on('length.dt', function(e, settings, len){ localStorage.setItem('procedimentos_fa_len', len); });
         });
     </script>
     </body>

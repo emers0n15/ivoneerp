@@ -28,26 +28,27 @@
         mysqli_stmt_execute($stmt_limpar);
     }
     
-    $fatura_selecionada = isset($_GET['fatura']) ? intval($_GET['fatura']) : null;
+    // ATENÇÃO: DV agora trabalha sobre VDS (venda_dinheiro_servico), não mais sobre factura_recepcao
+    $vds_selecionado = isset($_GET['vds']) ? intval($_GET['vds']) : null;
     $empresa_selecionada = null;
     $paciente_selecionado = null;
-    $fatura_data = null;
+    $vds_data = null;
     
-    if($fatura_selecionada) {
-        // Buscar informações da fatura selecionada
-        $check_table = "SHOW TABLES LIKE 'factura_recepcao'";
+    if($vds_selecionado) {
+        // Buscar informações da VDS selecionada
+        $check_table = "SHOW TABLES LIKE 'venda_dinheiro_servico'";
         $table_exists = mysqli_query($db, $check_table);
         if($table_exists && mysqli_num_rows($table_exists) > 0) {
-            $sql_fatura = "SELECT f.*, p.nome, p.apelido, e.nome as empresa_nome 
-                          FROM factura_recepcao f 
-                          INNER JOIN pacientes p ON f.paciente = p.id 
-                          LEFT JOIN empresas_seguros e ON f.empresa_id = e.id
-                          WHERE f.id = $fatura_selecionada";
-            $rs_fatura = mysqli_query($db, $sql_fatura);
-            if($rs_fatura && mysqli_num_rows($rs_fatura) > 0) {
-                $fatura_data = mysqli_fetch_array($rs_fatura);
-                $empresa_selecionada = $fatura_data['empresa_id'] ?? null;
-                $paciente_selecionado = $fatura_data['paciente'] ?? null;
+            $sql_vds = "SELECT v.*, p.nome, p.apelido, e.nome as empresa_nome 
+                        FROM venda_dinheiro_servico v 
+                        INNER JOIN pacientes p ON v.paciente = p.id 
+                        LEFT JOIN empresas_seguros e ON v.empresa_id = e.id
+                        WHERE v.id = $vds_selecionado";
+            $rs_vds = mysqli_query($db, $sql_vds);
+            if($rs_vds && mysqli_num_rows($rs_vds) > 0) {
+                $vds_data = mysqli_fetch_array($rs_vds);
+                $empresa_selecionada = $vds_data['empresa_id'] ?? null;
+                $paciente_selecionado = $vds_data['paciente'] ?? null;
             }
         }
     }
@@ -82,6 +83,15 @@
               border-radius: 5px;
               margin-bottom: 10px;
               border-left: 4px solid #ffc107;
+          }
+          .categoria-header {
+              background: #f1f5f9;
+              font-weight: 600;
+              color: #1f2937;
+          }
+          .categoria-header td{
+              padding: 10px 12px;
+              border-top: 2px solid #e2e8f0;
           }
       </style>
     </head>
@@ -133,47 +143,42 @@
                   <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                       <div class="modal-header">
-                        <h3 class="modal-title fs-5" id="modalFaturaLabel">Selecionar Fatura</h3>
+                        <h3 class="modal-title fs-5" id="modalFaturaLabel">Selecionar VDS</h3>
                         <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close">X</button>
                       </div>
                       <div class="modal-body">
                           <div class="col-sm-12">
-                            <label class="form-label">Fatura *</label>
+                            <label class="form-label">VDS *</label>
                             <select class="form-select js-example-basic-single" id="selectFatura" style="width: 100%;">
-                                <option value="">Selecione uma fatura...</option>
+                                <option value="">Selecione uma VDS...</option>
                                 <?php 
-                                $check_table = "SHOW TABLES LIKE 'factura_recepcao'";
+                                $check_table = "SHOW TABLES LIKE 'venda_dinheiro_servico'";
                                 $table_exists = mysqli_query($db, $check_table);
                                 if($table_exists && mysqli_num_rows($table_exists) > 0) {
-                                    $tem_pagamentos = tabelaExiste($db, 'pagamentos_recepcao');
-                                    $tem_nc = tabelaExiste($db, 'nota_credito_recepcao');
-                                    $tem_nd = tabelaExiste($db, 'nota_debito_recepcao');
-                                    $tem_dv = tabelaExiste($db, 'devolucao_recepcao');
-
-                                    $sub_pagamentos = $tem_pagamentos ? "(SELECT COALESCE(SUM(valor_pago), 0) FROM pagamentos_recepcao WHERE factura_recepcao_id = f.id OR (fatura_id = f.id AND factura_recepcao_id IS NULL))" : "0";
-                                    $sub_nc = $tem_nc ? "(SELECT COALESCE(SUM(valor), 0) FROM nota_credito_recepcao WHERE factura_recepcao_id = f.id)" : "0";
-                                    $sub_nd = $tem_nd ? "(SELECT COALESCE(SUM(valor), 0) FROM nota_debito_recepcao WHERE factura_recepcao_id = f.id)" : "0";
-                                    $sub_dv = $tem_dv ? "(SELECT COALESCE(SUM(valor), 0) FROM devolucao_recepcao WHERE factura_recepcao_id = f.id)" : "0";
-
+                                    // DV agora trabalha sobre VDS. Listar apenas VDS com valor disponível > 0 (valor - devoluções anteriores)
                                     $sql = "SELECT dados.*
                                             FROM (
-                                                SELECT f.*, p.nome, p.apelido, p.numero_processo, e.nome as empresa_nome,
-                                                       (f.valor + $sub_nd - $sub_nc - $sub_dv - $sub_pagamentos) AS valor_disponivel
-                                                FROM factura_recepcao f 
-                                                INNER JOIN pacientes p ON f.paciente = p.id 
-                                                LEFT JOIN empresas_seguros e ON f.empresa_id = e.id
+                                                SELECT v.*, 
+                                                       p.nome, p.apelido, p.numero_processo, 
+                                                       e.nome as empresa_nome,
+                                                       (v.valor - COALESCE((SELECT SUM(valor) 
+                                                                            FROM devolucao_recepcao dv 
+                                                                            WHERE dv.factura_recepcao_id = v.id), 0)) AS valor_disponivel
+                                                FROM venda_dinheiro_servico v
+                                                INNER JOIN pacientes p ON v.paciente = p.id
+                                                LEFT JOIN empresas_seguros e ON v.empresa_id = e.id
                                             ) dados
                                             WHERE dados.valor_disponivel > 0.01
-                                            ORDER BY dados.data DESC 
+                                            ORDER BY dados.dataa DESC 
                                             LIMIT 50";
                                     $rs = mysqli_query($db, $sql);
                                     while ($dados = mysqli_fetch_array($rs)) {
-                                        $fatura_text = "FA#" . $dados['serie'] . "/" . str_pad($dados['n_doc'], 6, '0', STR_PAD_LEFT) . " - " . 
+                                        $vds_text = "VDS#" . $dados['serie'] . "/" . str_pad($dados['n_doc'], 6, '0', STR_PAD_LEFT) . " - " . 
                                                       $dados['nome'] . " " . $dados['apelido'] . 
                                                       ($dados['empresa_nome'] ? " (" . $dados['empresa_nome'] . ")" : "") . 
-                                                      " - " . number_format($dados['valor'], 2, ',', '.') . " MT";
+                                                      " - " . number_format($dados['valor_disponivel'], 2, ',', '.') . " MT";
                                     ?>
-                                      <option value="<?php echo $dados['id'];?>" <?php echo ($fatura_selecionada == $dados['id']) ? 'selected' : ''; ?>><?php echo $fatura_text; ?></option>
+                                      <option value="<?php echo $dados['id'];?>" <?php echo ($vds_selecionado == $dados['id']) ? 'selected' : ''; ?>><?php echo $vds_text; ?></option>
                                     <?php
                                     }
                                 }
@@ -196,14 +201,14 @@
                 </div>
                 <div class="col-sm-7" style="background: #38D0ED;color:#fff;display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:10px;">
                     <div style="flex:1;">
-                        <?php if($fatura_selecionada): ?>
+                        <?php if($vds_selecionado): ?>
                             <div class="fatura-info">
                                 <strong>Fatura Selecionada:</strong> 
                                 <?php 
-                                if($fatura_data) {
-                                    echo "FA#" . $fatura_data['serie'] . "/" . str_pad($fatura_data['n_doc'], 6, '0', STR_PAD_LEFT) . 
-                                         " - " . $fatura_data['nome'] . " " . $fatura_data['apelido'] . 
-                                         ($fatura_data['empresa_nome'] ? " (" . $fatura_data['empresa_nome'] . ")" : "");
+                                if($vds_data) {
+                                    echo "VDS#" . $vds_data['serie'] . "/" . str_pad($vds_data['n_doc'], 6, '0', STR_PAD_LEFT) . 
+                                         " - " . $vds_data['nome'] . " " . $vds_data['apelido'] . 
+                                         ($vds_data['empresa_nome'] ? " (" . $vds_data['empresa_nome'] . ")" : "");
                                 }
                                 ?>
                                 <button type="button" class="btn btn-sm btn-warning ml-2" data-toggle="modal" data-target="#modalFatura">Alterar Fatura</button>
@@ -223,17 +228,17 @@
             </div>
             <div class="row">
                 <!-- Área de Serviços -->
-                <div class="col-sm-8 table-responsive" style="background:#fff;display: flex;flex-direction: row;overflow: auto;height:90vh;color: #333;justify-content: center;padding-top: 1%;">
-                    <?php if(!$fatura_selecionada): ?>
-                        <div style="width: 100%; display: flex; align-items: center; justify-content: center; height: 100%;">
+                <div class="col-sm-8" style="background:#fff;display:flex;flex-direction:column;min-height:70vh;color:#333;padding:15px;">
+                    <?php if(!$vds_selecionado): ?>
+                        <div style="flex:1;display:flex;align-items:center;justify-content:center;">
                             <div style="text-align: center;">
-                                <h3>Selecione uma fatura para continuar</h3>
-                                <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#modalFatura">Selecionar Fatura</button>
+                                <h3>Selecione uma VDS para continuar</h3>
+                                <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#modalFatura">Selecionar VDS</button>
                             </div>
                         </div>
                     <?php else: 
-                        // Buscar serviços da fatura selecionada
-                        $check_table_serv = "SHOW TABLES LIKE 'fa_servicos_fact_recepcao'";
+                        // Buscar serviços da VDS selecionada
+                        $check_table_serv = "SHOW TABLES LIKE 'vds_servicos_fact'";
                         $table_serv_exists = mysqli_query($db, $check_table_serv);
                         if($table_serv_exists && mysqli_num_rows($table_serv_exists) > 0) {
                             $tem_dv_det = tabelaExiste($db, 'dv_servicos_fact') && tabelaExiste($db, 'devolucao_recepcao');
@@ -241,27 +246,28 @@
                                 ? "(SELECT COALESCE(SUM(dvf.qtd), 0) 
                                    FROM dv_servicos_fact dvf 
                                    INNER JOIN devolucao_recepcao dv ON dv.id = dvf.devolucao_id 
-                                   WHERE dv.factura_recepcao_id = $fatura_selecionada AND dvf.servico = fs.servico)"
+                                   WHERE dv.factura_recepcao_id = $vds_selecionado AND dvf.servico = vs.servico)"
                                 : "0";
 
                             $sql_servicos = "SELECT 
-                                                fs.servico,
+                                                vs.servico,
                                                 s.nome AS servico_nome,
                                                 s.categoria,
-                                                SUM(fs.qtd) AS qtd_total,
-                                                SUM(fs.total) AS total_original,
-                                                (CASE WHEN SUM(fs.qtd) > 0 THEN SUM(fs.total)/SUM(fs.qtd) ELSE 0 END) AS preco_unit,
+                                                SUM(vs.qtd) AS qtd_total,
+                                                SUM(vs.total) AS total_original,
+                                                (CASE WHEN SUM(vs.qtd) > 0 THEN SUM(vs.total)/SUM(vs.qtd) ELSE 0 END) AS preco_unit,
                                                 $sub_qtd_devolvida AS qtd_devolvida,
-                                                (SUM(fs.qtd) - $sub_qtd_devolvida) AS qtd_disponivel
-                                            FROM fa_servicos_fact_recepcao fs 
-                                            INNER JOIN servicos_clinica s ON fs.servico = s.id 
-                                            WHERE fs.factura = $fatura_selecionada
-                                            GROUP BY fs.servico, s.nome, s.categoria
+                                                (SUM(vs.qtd) - $sub_qtd_devolvida) AS qtd_disponivel
+                                            FROM vds_servicos_fact vs 
+                                            INNER JOIN servicos_clinica s ON vs.servico = s.id 
+                                            WHERE vs.vds_id = $vds_selecionado
+                                            GROUP BY vs.servico, s.nome, s.categoria
                                             HAVING qtd_disponivel > 0
                                             ORDER BY s.categoria, s.nome";
                             $rs_servicos = mysqli_query($db, $sql_servicos);
                     ?>
-                    <table id="example" style="height: 86%;width: 100%;">
+                    <div class="table-responsive">
+                    <table id="tabela-servicos-dv" class="table table-sm table-hover" style="width: 100%;">
                         <thead>
                             <th>#</th>
                             <th>Serviço</th>
@@ -272,12 +278,21 @@
                         </thead>
                         <tbody>
                             <?php
+                            $categoria_atual = null;
                             if($rs_servicos && mysqli_num_rows($rs_servicos) > 0) {
                                 while ($servico = mysqli_fetch_array($rs_servicos)) {
                                     $servico_id = $servico['servico'];
                                     $preco_unit = floatval($servico['preco_unit']);
                                     $qtd = intval($servico['qtd_disponivel']);
                                     $total_item = $preco_unit * $qtd;
+                                    if($categoria_atual !== $servico['categoria']){
+                                        $categoria_atual = $servico['categoria'];
+                                        ?>
+                                        <tr class="categoria-header">
+                                            <td colspan="6"><?php echo htmlspecialchars($categoria_atual ?: 'Sem categoria'); ?></td>
+                                        </tr>
+                                        <?php
+                                    }
                             ?>
                             <tr data-idservico="<?php echo $servico_id; ?>" data-preco="<?php echo $preco_unit; ?>" data-qtd="<?php echo $qtd; ?>">
                                 <td><?php echo $servico_id; ?></td>
@@ -290,11 +305,12 @@
                             <?php 
                                 }
                             } else {
-                                echo '<tr><td colspan="6" class="text-center">Nenhum serviço encontrado nesta fatura.</td></tr>';
+                                echo '<tr><td colspan="6" class="text-center">Nenhum serviço encontrado nesta VDS.</td></tr>';
                             }
                             ?>
                         </tbody>
                     </table>
+                    </div>
                     <?php } else {
                         echo '<div style="width: 100%; display: flex; align-items: center; justify-content: center; height: 100%;"><div style="text-align: center;"><h3>Erro: Tabela de serviços não encontrada.</h3></div></div>';
                     }
@@ -312,7 +328,7 @@
                         <div id="cancelar" class="col-sm-6" style="display:flex; flex-direction:column;justify-content: center;align-items: center;cursor:pointer;">
                             <h4>Cancelar</h4>
                         </div>
-                        <div class="col-sm-6" style="display:flex; flex-direction:column;justify-content: center;align-items: center;border-left: 1px solid #fff;cursor:pointer;" data-toggle="modal" data-target="#exampleModal3" <?php echo !$fatura_selecionada ? 'style="opacity: 0.5; pointer-events: none;"' : ''; ?>>
+                        <div class="col-sm-6" style="display:flex; flex-direction:column;justify-content: center;align-items: center;border-left: 1px solid #fff;cursor:pointer;" data-toggle="modal" data-target="#exampleModal3" <?php echo !$vds_selecionado ? 'style="opacity: 0.5; pointer-events: none;"' : ''; ?>>
                             <h4>Criar DV</h4>
                             <h2 class="ttl"></h2>
                         </div>
@@ -328,25 +344,26 @@
     <script src="../select2.min.js"></script>
     <script src="../datatables.min.js"></script>
     <script>
-        var faturaSelecionada = <?php echo ($fatura_selecionada && $fatura_selecionada > 0) ? intval($fatura_selecionada) : 'null'; ?>;
+        // Agora DV trabalha sobre VDS. Esta variável representa o ID da VDS selecionada.
+        var vdsSelecionado = <?php echo ($vds_selecionado && $vds_selecionado > 0) ? intval($vds_selecionado) : 'null'; ?>;
         var empresaSelecionada = <?php echo ($empresa_selecionada && $empresa_selecionada > 0) ? intval($empresa_selecionada) : 'null'; ?>;
         
-        console.log("faturaSelecionada:", faturaSelecionada, "tipo:", typeof faturaSelecionada);
+        console.log("vdsSelecionado:", vdsSelecionado, "tipo:", typeof vdsSelecionado);
         console.log("empresaSelecionada:", empresaSelecionada);
         
         function selecionarFatura() {
-            var faturaId = $('#selectFatura').val();
-            if(!faturaId || faturaId == "") {
-                alert("Por favor, selecione uma fatura!");
+            var vdsId = $('#selectFatura').val();
+            if(!vdsId || vdsId == "") {
+                alert("Por favor, selecione uma VDS!");
                 return;
             }
             // Recarregar a página com a fatura selecionada
             // Os serviços serão carregados automaticamente quando a página carregar
-            window.location.href = '?fatura=' + faturaId;
+            window.location.href = '?vds=' + vdsId;
         }
         
         $(function(){
-            if(faturaSelecionada) {
+            if(vdsSelecionado) {
                 // Carregar automaticamente os serviços da fatura
                 carregarServicosFatura();
                 setInterval(nrpedido, 1000);
@@ -356,18 +373,18 @@
             }
             
             function carregarServicosFatura() {
-                if(!faturaSelecionada || faturaSelecionada == null || faturaSelecionada == 'null') {
-                    console.error("faturaSelecionada não está definida:", faturaSelecionada);
+                if(!vdsSelecionado || vdsSelecionado == null || vdsSelecionado == 'null') {
+                    console.error("vdsSelecionado não está definido:", vdsSelecionado);
                     return;
                 }
                 
-                console.log("Carregando serviços da fatura:", faturaSelecionada);
+                console.log("Carregando serviços da VDS:", vdsSelecionado);
                 
                 $.ajax({
                     type: "POST",
                     url: "dv_recepcao/carregar_servicos_fatura.php",
                     data: { 
-                        fatura_id: faturaSelecionada
+                        fatura_id: vdsSelecionado // aqui o ID representa a VDS
                     },
                     success: function(response){
                         console.log("Resposta do servidor:", response);
@@ -377,9 +394,9 @@
                         } else if(response == 4){
                             alert("Erro: As tabelas necessárias não foram criadas. Execute o SQL de criação.");
                         } else if(response == 7){
-                            alert("Nenhum serviço encontrado nesta fatura.");
+                            alert("Nenhum serviço encontrado nesta VDS.");
                         } else if(response == 10){
-                            alert("Fatura não encontrada.");
+                            alert("VDS não encontrada.");
                         } else if(response == 31){
                             alert("Erro ao carregar serviços da fatura.");
                         } else if(response == 40){
@@ -404,7 +421,7 @@
                     $("#nrpedido").html(data);
                   },
                   error: function() {
-                    $("#nrpedido").html("Erro ao carregar número da DV!");
+                        $("#nrpedido").html("Erro ao carregar número da DV!");
                   }
               });
             }
@@ -463,8 +480,8 @@
             });
             
             function criardevolucao() {
-                if(!faturaSelecionada || faturaSelecionada == null || faturaSelecionada == 'null') {
-                    alert("Por favor, selecione uma fatura primeiro!");
+                if(!vdsSelecionado || vdsSelecionado == null || vdsSelecionado == 'null') {
+                    alert("Por favor, selecione uma VDS primeiro!");
                     $('#modalFatura').modal('show');
                     return;
                 }
@@ -488,7 +505,7 @@
                         type: "POST",
                         url: "dv_recepcao/criardevolucao.php",
                         data: {
-                          fatura_id: faturaSelecionada,
+                          fatura_id: vdsSelecionado, // aqui o ID representa a VDS
                           empresa_id: empresaSelecionada,
                           motivo: motivo,
                           metodo: metodo
@@ -569,12 +586,42 @@
                 }
             }
             
-            if(faturaSelecionada && $('#example').length) {
-                var possuiServicos = $('#example tbody tr[data-idservico]').length > 0;
-                if(possuiServicos) {
-                    $('#example').DataTable();
+            function inicializarTabelaServicos() {
+                var $tabela = $('#tabela-servicos-dv');
+                if(!$tabela.length) {
+                    return;
                 }
+
+                var possuiServicos = $tabela.find('tbody tr[data-idservico]').length > 0;
+                if(!possuiServicos || $tabela.data('datatable-initialized')) {
+                    return;
+                }
+
+                $tabela.DataTable({
+                    pageLength: 15,
+                    lengthChange: false,
+                    searching: true,
+                    ordering: true,
+                    info: true,
+                    language: {
+                        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json",
+                        paginate: {
+                            previous: "Anterior",
+                            next: "Próximo"
+                        },
+                        emptyTable: "Nenhum serviço disponível",
+                        info: "Mostrando _START_ a _END_ de _TOTAL_ serviços",
+                        infoEmpty: "Mostrando 0 a 0 de 0 serviços",
+                        search: "Pesquisar:",
+                        zeroRecords: "Nenhum serviço encontrado"
+                    }
+                });
+
+                $tabela.data('datatable-initialized', true);
             }
+
+            inicializarTabelaServicos();
+            inicializarTabelaServicos();
         });
     </script>
     </body>
